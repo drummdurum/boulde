@@ -1,0 +1,8 @@
+CREATE CONSTRAINT user_id IF NOT EXISTS FOR (u:User) REQUIRE u.id IS UNIQUE;
+CREATE CONSTRAINT user_email IF NOT EXISTS FOR (u:User) REQUIRE u.email IS UNIQUE;
+CREATE CONSTRAINT user_username IF NOT EXISTS FOR (u:User) REQUIRE u.username IS UNIQUE;
+CREATE CONSTRAINT post_id IF NOT EXISTS FOR (p:Post) REQUIRE p.id IS UNIQUE;
+CREATE CONSTRAINT project_id IF NOT EXISTS FOR (p:Project) REQUIRE p.id IS UNIQUE;
+CREATE INDEX post_created_at IF NOT EXISTS FOR (p:Post) ON (p.createdAt);
+CREATE INDEX project_created_at IF NOT EXISTS FOR (p:Project) ON (p.createdAt);
+CREATE INDEX user_name IF NOT EXISTS FOR (u:User) ON (u.name);

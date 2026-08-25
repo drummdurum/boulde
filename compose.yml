@@ -1,0 +1,18 @@
+services:
+  neo4j:
+    image: neo4j:5-community
+    environment:
+      NEO4J_AUTH: neo4j/boulde_local_password
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - boulde_neo4j_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  boulde_neo4j_data:

@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --sand: #f4f0e7;
+  --limestone: #fcfaf5;
+  --pine: #26382d;
+  --moss: #66735b;
+  --clay: #b76445;
+  --ochre: #c18a3d;
+  --ink: #242620;
+  --muted: #6e7068;
+  --line: #ddd7ca;
+  --positive: #4f7358;
+}
+* { box-sizing: border-box; }
+html { background: var(--sand); }
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at 92% 2%, rgba(193,138,61,.10), transparent 23rem),
+    radial-gradient(circle at 16% 90%, rgba(102,115,91,.08), transparent 28rem),
+    var(--sand);
+  color: var(--ink);
+  font-family: var(--font-manrope), sans-serif;
+}
+button, input, textarea, select { font: inherit; }
+::selection { background: rgba(183,100,69,.25); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
