@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { DeleteObjectCommand, HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import neo4j from "neo4j-driver";
 
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -9,6 +10,19 @@ const user = {
   email: `e2e-${runId}@boulde.local`,
   password: "E2e-hemmelig-123",
 };
+const sessionUser = { ...user, name: "E2E Sessionvært", username: `session_${runId.replace(/-/g, "_")}`.slice(0, 24), email: `e2e-session-${runId}@boulde.local` };
+const mediaUser = { ...user, name: "E2E Medievært", username: `media_${runId.replace(/-/g, "_")}`.slice(0, 24), email: `e2e-media-${runId}@boulde.local` };
+const storageBucket = process.env.STORAGE_BUCKET || "boulde-media";
+const storage = new S3Client({
+  region: process.env.STORAGE_REGION || "us-east-1",
+  endpoint: process.env.STORAGE_ENDPOINT || "http://127.0.0.1:9000",
+  forcePathStyle: true,
+  credentials: {
+    accessKeyId: process.env.STORAGE_ACCESS_KEY || "boulde_local",
+    secretAccessKey: process.env.STORAGE_SECRET_KEY || "boulde_local_password",
+  },
+});
+let uploadedStorageKey: string | undefined;
 
 test.afterAll(async () => {
   const driver = neo4j.driver(
@@ -16,13 +30,25 @@ test.afterAll(async () => {
     neo4j.auth.basic(process.env.NEO4J_USERNAME || "neo4j", process.env.NEO4J_PASSWORD || "boulde_local_password"),
   );
   try {
-    await driver.executeQuery(
-      "MATCH (u:User {email: $email}) DETACH DELETE u",
-      { email: user.email },
+    for (const email of [user.email, sessionUser.email, mediaUser.email]) await driver.executeQuery(
+      `MATCH (u:User {email: $email})
+       OPTIONAL MATCH (u)-[:HOSTS]->(s:ClimbingSession)
+       OPTIONAL MATCH (s)<-[:JOINS]-(g:SessionGuest)
+       OPTIONAL MATCH (u)-[:WORKS_ON]->(p:Project)
+       OPTIONAL MATCH (p)-[:HAS_MEDIA]->(m:ProjectMedia)
+       WITH u, collect(DISTINCT s) AS sessions, collect(DISTINCT g) AS guests, collect(DISTINCT p) AS projects, collect(DISTINCT m) AS media
+       FOREACH (guest IN guests | DETACH DELETE guest)
+       FOREACH (session IN sessions | DETACH DELETE session)
+       FOREACH (item IN media | DETACH DELETE item)
+       FOREACH (project IN projects | DETACH DELETE project)
+       DETACH DELETE u`,
+      { email },
       { database: process.env.NEO4J_DATABASE || "neo4j", routing: "WRITE" },
     );
   } finally {
     await driver.close();
+    if (uploadedStorageKey) await storage.send(new DeleteObjectCommand({ Bucket: storageBucket, Key: uploadedStorageKey }));
+    storage.destroy();
   }
 });
 
@@ -68,6 +94,114 @@ test("opretter bruger, logger ind og åbner de beskyttede sider", async ({ page 
 
   await page.goto("/profil");
   await expect(page.getByText("Følger", { exact: true }).locator("..").getByText("1", { exact: true })).toBeVisible();
+});
+
+test("opretter og deler en global session med live tilmelding", async ({ page, browser }) => {
+  await page.goto("/opret");
+  await page.getByLabel("Navn", { exact: true }).fill(sessionUser.name);
+  await page.getByLabel("Brugernavn", { exact: true }).fill(sessionUser.username);
+  await page.getByLabel(/By/).fill(sessionUser.location);
+  await page.getByLabel("E-mail", { exact: true }).fill(sessionUser.email);
+  await page.getByLabel("Adgangskode", { exact: true }).fill(sessionUser.password);
+  await page.getByRole("button", { name: "Opret bruger" }).click();
+  await expect(page).toHaveURL("/");
+
+  await page.goto("/sessioner");
+  await page.getByRole("button", { name: "Ny session", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Ny session" });
+  const sessionTitle = `E2E session ${runId}`;
+  const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  await dialog.getByLabel("Titel").fill(sessionTitle);
+  await dialog.getByLabel("Dato").fill(tomorrow);
+  await dialog.getByLabel("Tid").fill("18:30");
+  await dialog.getByLabel("Sted").fill("E2E Klatrehal");
+  await dialog.getByRole("button", { name: "Opret og få delingslink" }).click();
+
+  const sessionCard = page.getByRole("article").filter({ hasText: sessionTitle });
+  await expect(sessionCard).toBeVisible();
+  await sessionCard.getByRole("link", { name: "Åbn session" }).click();
+  await expect(page).toHaveURL(/\/session\/[^/]+$/);
+  await expect(page.getByRole("heading", { name: sessionTitle })).toBeVisible();
+  const shareUrl = page.url();
+
+  const guestContext = await browser.newContext();
+  const guestPage = await guestContext.newPage();
+  try {
+    await guestPage.goto(shareUrl);
+    await expect(guestPage.getByRole("heading", { name: sessionTitle })).toBeVisible();
+    await guestPage.getByLabel("Vil du med?").fill("Live Gæst");
+    await guestPage.getByRole("button", { name: "Jeg er med" }).click();
+    await expect(guestPage.getByText("Du er med!")).toBeVisible();
+    await expect(page.getByText("Live Gæst")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByRole("heading", { name: "2 deltagere" })).toBeVisible();
+  } finally {
+    await guestContext.close();
+  }
+});
+
+test("uploader en projektvideo til objektlageret", async ({ page }) => {
+  const videoBytes = Buffer.from([0, 0, 0, 20, 102, 116, 121, 112, 105, 115, 111, 109]);
+  const projectName = `Video E2E ${runId}`;
+  await page.goto("/opret");
+  await page.getByLabel("Navn", { exact: true }).fill(mediaUser.name);
+  await page.getByLabel("Brugernavn", { exact: true }).fill(mediaUser.username);
+  await page.getByLabel(/By/).fill(mediaUser.location);
+  await page.getByLabel("E-mail", { exact: true }).fill(mediaUser.email);
+  await page.getByLabel("Adgangskode", { exact: true }).fill(mediaUser.password);
+  await page.getByRole("button", { name: "Opret bruger" }).click();
+  await expect(page).toHaveURL("/");
+  await page.goto("/projekter");
+  await page.getByRole("button", { name: "Opret dit første projekt" }).click();
+  const projectDialog = page.getByRole("dialog", { name: "Opret projekt" });
+  await projectDialog.getByLabel("Projektnavn").fill(projectName);
+  await projectDialog.getByLabel("Sted").fill("Testhallen");
+  await projectDialog.getByRole("button", { name: "Opret projekt" }).click();
+  await page.getByRole("button", { name: "Nyt forsøg" }).first().click();
+  const mediaDialog = page.getByRole("dialog", { name: "Nyt forsøg" });
+  await mediaDialog.getByLabel("Vælg video").setInputFiles({ name: "kort-forsøg.mp4", mimeType: "video/mp4", buffer: videoBytes });
+  await mediaDialog.getByRole("textbox", { name: /Note/ }).fill("Test af objektlager");
+  await mediaDialog.getByRole("button", { name: "Gem forsøg" }).click();
+  await expect(page.getByRole("heading", { name: "Delte billeder og videoer" })).toBeVisible({ timeout: 15_000 });
+  await expect(page.locator("video")).toBeVisible();
+
+  const driver = neo4j.driver(
+    process.env.NEO4J_URI || "neo4j://127.0.0.1:7687",
+    neo4j.auth.basic(process.env.NEO4J_USERNAME || "neo4j", process.env.NEO4J_PASSWORD || "boulde_local_password"),
+  );
+  try {
+    const result = await driver.executeQuery(
+      `MATCH (:User {email: $email})-[:WORKS_ON]->(p:Project {name: $projectName})-[:HAS_MEDIA]->(m:ProjectMedia)
+       RETURN p.id AS projectId, p.attempts AS attempts, m.storageKey AS storageKey,
+              m.contentType AS contentType, m.size AS size, m.note AS note, m.type AS type`,
+      { email: mediaUser.email, projectName },
+      { database: process.env.NEO4J_DATABASE || "neo4j" },
+    );
+    expect(result.records).toHaveLength(1);
+    const record = result.records[0];
+    uploadedStorageKey = record.get("storageKey");
+    expect(record.get("projectId")).toBeTruthy();
+    const numberValue = (value: unknown) => neo4j.isInt(value) ? value.toNumber() : Number(value);
+    expect(numberValue(record.get("attempts"))).toBe(1);
+    expect(record.get("contentType")).toBe("video/mp4");
+    expect(numberValue(record.get("size"))).toBe(videoBytes.length);
+    expect(record.get("note")).toBe("Test af objektlager");
+    expect(record.get("type")).toBe("video");
+
+    const storedObject = await storage.send(new HeadObjectCommand({ Bucket: storageBucket, Key: uploadedStorageKey }));
+    expect(storedObject.ContentLength).toBe(videoBytes.length);
+    expect(storedObject.ContentType).toBe("video/mp4");
+
+    const mediaResponse = await page.request.get(`/api/projects/${record.get("projectId")}/media`);
+    expect(mediaResponse.ok()).toBeTruthy();
+    const media = (await mediaResponse.json()).media;
+    expect(media).toHaveLength(1);
+    expect(media[0]).toMatchObject({ type: "video", contentType: "video/mp4", note: "Test af objektlager", size: videoBytes.length });
+    const download = await page.request.get(media[0].url);
+    expect(download.ok()).toBeTruthy();
+    expect(await download.body()).toEqual(videoBytes);
+  } finally {
+    await driver.close();
+  }
 });
 
 test("modalvinduer kan bruges og lukkes på en telefon", async ({ page }) => {
