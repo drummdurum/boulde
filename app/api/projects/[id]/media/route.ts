@@ -12,7 +12,7 @@ async function currentUser() { return userFromSession(cookies().get(SESSION_COOK
 export async function GET(_: Request, { params }: { params: { id: string } }) {
   const user = await currentUser(); if (!user) return NextResponse.json({ error: "Du skal være logget ind." }, { status: 401 });
   if (!await canViewProject(user.id, params.id)) return NextResponse.json({ error: "Du har ikke adgang til projektet." }, { status: 403 });
-  const media = await getProjectMedia(params.id); return NextResponse.json({ media: await Promise.all(media.map(async item => ({ id: item.id, projectId: params.id, type: item.type, contentType: item.contentType, size: Number(item.size), note: item.note, createdAt: item.createdAt.toString(), url: await createReadUrl(item.storageKey) }))) });
+  const media = await getProjectMedia(params.id); return NextResponse.json({ media: await Promise.all(media.map(async item => ({ id: item.id, projectId: params.id, type: item.type, contentType: item.contentType, size: Number(item.size), note: item.note, createdAt: item.createdAt.toString(), url: item.publicUrl || (item.storageKey ? await createReadUrl(item.storageKey) : "") }))) });
 }
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   const user = await currentUser(); if (!user) return NextResponse.json({ error: "Du skal være logget ind." }, { status: 401 });

@@ -7,6 +7,8 @@ CREATE CONSTRAINT place_id IF NOT EXISTS FOR (p:Place) REQUIRE p.id IS UNIQUE;
 CREATE CONSTRAINT climbing_session_id IF NOT EXISTS FOR (s:ClimbingSession) REQUIRE s.id IS UNIQUE;
 CREATE CONSTRAINT climbing_session_share_id IF NOT EXISTS FOR (s:ClimbingSession) REQUIRE s.shareId IS UNIQUE;
 CREATE CONSTRAINT project_media_id IF NOT EXISTS FOR (m:ProjectMedia) REQUIRE m.id IS UNIQUE;
+CREATE CONSTRAINT climbing_location_id IF NOT EXISTS FOR (l:ClimbingLocation) REQUIRE l.id IS UNIQUE;
+CREATE CONSTRAINT location_request_id IF NOT EXISTS FOR (r:LocationRequest) REQUIRE r.id IS UNIQUE;
 CREATE INDEX post_created_at IF NOT EXISTS FOR (p:Post) ON (p.createdAt);
 CREATE INDEX project_created_at IF NOT EXISTS FOR (p:Project) ON (p.createdAt);
 CREATE INDEX climbing_session_date IF NOT EXISTS FOR (s:ClimbingSession) ON (s.date);

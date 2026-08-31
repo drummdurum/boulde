@@ -9,7 +9,7 @@ const items = [
   { label: "Klatrere", icon: Users, href: "/klatrere" },
   { label: "Mine projekter", icon: Target, href: "/projekter" },
   { label: "Sessioner", icon: CalendarDays, href: "/sessioner" },
-  { label: "Klatresteder", icon: MapPinned, href: "/steder" },
+  { label: "Klatresteder", icon: MapPinned, href: "/klatresteder" },
   { label: "Gemte opslag", icon: Bookmark, href: "#" },
   { label: "Profil", icon: UserRound, href: "/profil" },
   { label: "Indstillinger", icon: Settings, href: "#" }
@@ -28,6 +28,6 @@ export function AppSidebar({ authenticated }: { authenticated: boolean }) {
 export function MobileNavigation({ authenticated }: { authenticated: boolean }) {
   const pathname = usePathname();
   if (!authenticated || pathname === "/login" || pathname === "/opret") return null;
-  const mobile = [items[0], items[1], items[2], items[3], items[6]];
+  const mobile = [items[0], items[1], items[2], items[4], items[6]];
   return <nav aria-label="Mobilnavigation" className="fixed inset-x-0 bottom-0 z-40 flex h-[74px] items-center justify-around border-t border-line bg-limestone/95 px-2 backdrop-blur lg:hidden">{mobile.map(({ label, icon: Icon, href }) => { const active = isActive(pathname, href); return <Link key={label} href={href} aria-current={active ? "page" : undefined} className={`flex min-h-12 min-w-14 flex-col items-center justify-center gap-1 rounded-xl text-[10px] font-extrabold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay ${active ? "text-pine" : "text-muted"}`}><Icon size={20} fill={active ? "currentColor" : "none"} /><span>{label === "Mine projekter" ? "Projekter" : label}</span></Link>; })}</nav>;
 }

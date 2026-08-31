@@ -3,11 +3,14 @@ import { cookies } from "next/headers";
 import { Manrope } from "next/font/google";
 import "./globals.css";
 import { AppSidebar, MobileNavigation } from "@/components/navigation";
+import { LanguageProvider, type Language } from "@/components/LanguageProvider";
 import { SESSION_COOKIE, userFromSession } from "@/lib/auth";
 
 const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 export const metadata: Metadata = { title: "Boulde · Dit klatrefællesskab", description: "Følg din klatring, del dine sends og find dit næste projekt." };
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const authenticated = Boolean(await userFromSession(cookies().get(SESSION_COOKIE)?.value));
-  return <html lang="da"><body className={manrope.variable}><AppSidebar authenticated={authenticated} />{children}<MobileNavigation authenticated={authenticated} /></body></html>;
+  const cookieStore = cookies();
+  const authenticated = Boolean(await userFromSession(cookieStore.get(SESSION_COOKIE)?.value));
+  const language: Language = cookieStore.get("boulde-language")?.value === "en" ? "en" : "da";
+  return <html lang={language}><body className={manrope.variable}><LanguageProvider initialLanguage={language}><AppSidebar authenticated={authenticated} />{children}<MobileNavigation authenticated={authenticated} /></LanguageProvider></body></html>;
 }

@@ -23,8 +23,18 @@ export interface ProjectMedia {
   id: string; projectId: string; type: "image" | "video"; contentType: string;
   size: number; note: string; url: string; createdAt: string;
 }
+export interface ProjectFeedItem {
+  project: ClimbingProject;
+  media: ProjectMedia[];
+  createdAt: string;
+}
 export interface ClimbingSpot {
   id: string; name: string; area: string; type: ClimbingType; routes: number; image: string; imageAlt: string;
+}
+export interface ClimbingLocation {
+  id: string; name: string; region: string; address: string; hours: string; hoursNote: string;
+  status: "open" | "closed"; type: string; chain: string; country: string; imageUrl: string;
+  mapsUrl: string; instagramUrl?: string; facebookUrl?: string; email?: string; phone?: string;
 }
 export interface ClimbingSession {
   id: string; shareId: string; title: string; date: string; time: string; location: string;
