@@ -4,7 +4,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { SESSION_COOKIE, userFromSession } from "@/lib/auth";
-import { createUserProject, getUserProjects } from "@/lib/user-data";
+import { createUserProject, getUserProjects, setProjectVisibility } from "@/lib/user-data";
 import type { ClimbingGrade } from "@/types";
 import { placeById } from "@/lib/places";
 
@@ -34,5 +34,15 @@ export async function POST(request: Request) {
     await writeFile(path.join(uploadDirectory, filename), Buffer.from(await imageFile.arrayBuffer()));
     image = `/uploads/projects/${filename}`;
   }
-  return NextResponse.json({ project: await createUserProject(user.id, { name, place, grade: grade as ClimbingGrade, note: typeof note === "string" ? note : "", image }) }, { status: 201 });
+  const visible = body.get("visible") === "on" || body.get("visible") === "true";
+  return NextResponse.json({ project: await createUserProject(user.id, { name, place, grade: grade as ClimbingGrade, note: typeof note === "string" ? note : "", image, visible }) }, { status: 201 });
+}
+
+export async function PATCH(request: Request) {
+  const user = await currentUser();
+  if (!user) return NextResponse.json({ error: "Du skal være logget ind." }, { status: 401 });
+  const body = await request.json();
+  if (typeof body.id !== "string" || typeof body.visible !== "boolean") return NextResponse.json({ error: "Ugyldig synlighed." }, { status: 400 });
+  const project = await setProjectVisibility(user.id, body.id, body.visible);
+  return project ? NextResponse.json({ project }) : NextResponse.json({ error: "Projektet blev ikke fundet." }, { status: 404 });
 }

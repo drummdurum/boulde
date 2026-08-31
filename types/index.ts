@@ -15,11 +15,21 @@ export interface Post {
 }
 export interface ClimbingProject {
   id: string; name: string; location: string; grade: ClimbingGrade; attempts: number;
-  lastAttempt: string; note: string; status: ProjectStatus; progress: number; image?: string; placeSlug?: string;
+  lastAttempt: string; note: string; status: ProjectStatus; progress: number; visible: boolean;
+  image?: string; placeSlug?: string;
+  owner?: Pick<User, "id" | "name" | "username" | "initials">;
+}
+export interface ProjectMedia {
+  id: string; projectId: string; type: "image" | "video"; contentType: string;
+  size: number; note: string; url: string; createdAt: string;
 }
 export interface ClimbingSpot {
   id: string; name: string; area: string; type: ClimbingType; routes: number; image: string; imageAlt: string;
 }
 export interface ClimbingSession {
-  id: string; date: string; day: string; time: string; location: string; participants: User[];
+  id: string; shareId: string; title: string; date: string; time: string; location: string;
+  project?: Pick<ClimbingProject, "id" | "name" | "grade">;
+  host: Pick<User, "id" | "name" | "initials">;
+  participants: Array<{ id: string; name: string; initials: string }>;
+  createdAt: string;
 }

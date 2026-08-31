@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "db:setup": "docker compose up -d --wait && npm run db:migrate && npm run db:seed",
+    "db:setup": "docker compose up -d --wait neo4j storage && docker compose run --rm storage-init && npm run db:migrate && npm run db:seed",
     "db:migrate": "node scripts/migrate.mjs",
     "db:seed": "node scripts/seed.mjs",
     "lint": "next lint",
@@ -16,6 +16,8 @@
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "3.901.0",
+    "@aws-sdk/s3-request-presigner": "3.901.0",
     "lucide-react": "^0.468.0",
     "neo4j-driver": "^6.2.0",
     "next": "14.2.35",

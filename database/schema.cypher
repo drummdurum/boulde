@@ -4,6 +4,10 @@ CREATE CONSTRAINT user_username IF NOT EXISTS FOR (u:User) REQUIRE u.username IS
 CREATE CONSTRAINT post_id IF NOT EXISTS FOR (p:Post) REQUIRE p.id IS UNIQUE;
 CREATE CONSTRAINT project_id IF NOT EXISTS FOR (p:Project) REQUIRE p.id IS UNIQUE;
 CREATE CONSTRAINT place_id IF NOT EXISTS FOR (p:Place) REQUIRE p.id IS UNIQUE;
+CREATE CONSTRAINT climbing_session_id IF NOT EXISTS FOR (s:ClimbingSession) REQUIRE s.id IS UNIQUE;
+CREATE CONSTRAINT climbing_session_share_id IF NOT EXISTS FOR (s:ClimbingSession) REQUIRE s.shareId IS UNIQUE;
+CREATE CONSTRAINT project_media_id IF NOT EXISTS FOR (m:ProjectMedia) REQUIRE m.id IS UNIQUE;
 CREATE INDEX post_created_at IF NOT EXISTS FOR (p:Post) ON (p.createdAt);
 CREATE INDEX project_created_at IF NOT EXISTS FOR (p:Project) ON (p.createdAt);
+CREATE INDEX climbing_session_date IF NOT EXISTS FOR (s:ClimbingSession) ON (s.date);
 CREATE INDEX user_name IF NOT EXISTS FOR (u:User) ON (u.name);
