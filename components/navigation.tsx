@@ -8,7 +8,7 @@ const items = [
   { label: "Dashboard", icon: LayoutGrid, href: "/" },
   { label: "Klatrere", icon: Users, href: "/klatrere" },
   { label: "Mine projekter", icon: Target, href: "/projekter" },
-  { label: "Klatresteder", icon: MapPinned, href: "#" },
+  { label: "Klatresteder", icon: MapPinned, href: "/steder" },
   { label: "Gemte opslag", icon: Bookmark, href: "#" },
   { label: "Profil", icon: UserRound, href: "/profil" },
   { label: "Indstillinger", icon: Settings, href: "#" }

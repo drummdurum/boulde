@@ -8,4 +8,5 @@ npm-debug.log*
 playwright-report
 test-results
 test-results-*
+public/uploads/
 *.tsbuildinfo

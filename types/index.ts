@@ -15,7 +15,7 @@ export interface Post {
 }
 export interface ClimbingProject {
   id: string; name: string; location: string; grade: ClimbingGrade; attempts: number;
-  lastAttempt: string; note: string; status: ProjectStatus; progress: number;
+  lastAttempt: string; note: string; status: ProjectStatus; progress: number; image?: string; placeSlug?: string;
 }
 export interface ClimbingSpot {
   id: string; name: string; area: string; type: ClimbingType; routes: number; image: string; imageAlt: string;
