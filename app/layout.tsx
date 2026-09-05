@@ -10,7 +10,7 @@ const manrope = Manrope({ subsets: ["latin"], variable: "--font-manrope" });
 export const metadata: Metadata = { title: "Boulde · Dit klatrefællesskab", description: "Følg din klatring, del dine sends og find dit næste projekt." };
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const cookieStore = cookies();
-  const authenticated = Boolean(await userFromSession(cookieStore.get(SESSION_COOKIE)?.value));
+  const user = await userFromSession(cookieStore.get(SESSION_COOKIE)?.value);
   const language: Language = cookieStore.get("boulde-language")?.value === "en" ? "en" : "da";
-  return <html lang={language}><body className={manrope.variable}><LanguageProvider initialLanguage={language}><AppSidebar authenticated={authenticated} />{children}<MobileNavigation authenticated={authenticated} /></LanguageProvider></body></html>;
+  return <html lang={language}><body className={manrope.variable}><LanguageProvider initialLanguage={language}><AppSidebar user={user} />{children}<MobileNavigation authenticated={Boolean(user)} /></LanguageProvider></body></html>;
 }

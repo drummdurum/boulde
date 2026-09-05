@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { MediaUploadModal } from "./ProjectMedia";
+import { MediaUploadModal, ProjectMediaPanel } from "./ProjectMedia";
 
 const project = { id: "project-media", name: "Videolinjen", location: "Kjugekull", grade: "7A" as const, attempts: 0, lastAttempt: "Aldrig", note: "", status: "Ny" as const, progress: 0, visible: true };
 
@@ -21,5 +21,27 @@ describe("MediaUploadModal", () => {
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
     expect(fetchMock).toHaveBeenNthCalledWith(2, "https://storage.test/upload", expect.objectContaining({ method: "PUT", body: video }));
     expect(fetchMock).toHaveBeenNthCalledWith(3, "/api/projects/project-media/media", expect.objectContaining({ body: expect.stringContaining('"action":"complete"') }));
+  });
+});
+
+describe("ProjectMediaPanel", () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it("udskyder hentning og dekodning af projektmedier", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ media: [
+        { id: "image-1", type: "image", url: "/image.jpg", note: "Cruxet" },
+        { id: "video-1", type: "video", url: "/video.mp4", note: "Forsøget" },
+      ] }),
+    }));
+    render(<ProjectMediaPanel projectId="project-media" />);
+
+    const image = await screen.findByRole("img", { name: "Cruxet" });
+    expect(image).toHaveAttribute("loading", "lazy");
+    expect(image).toHaveAttribute("decoding", "async");
+    const video = screen.getByLabelText("Forsøget");
+    expect(video).toHaveAttribute("preload", "none");
+    expect(video).toHaveAttribute("playsinline");
   });
 });

@@ -15,6 +15,14 @@ describe("FollowingProjectCard video", () => {
     const video = screen.getByLabelText("Video fra Testprojekt");
     expect(video).toHaveAttribute("controls");
     expect(video).toHaveAttribute("playsinline");
+    expect(video).toHaveAttribute("preload", "none");
     expect(container.querySelector("figcaption")).toHaveClass("pointer-events-none");
+  });
+
+  it("lazy-loader og dekoder billeder asynkront", () => {
+    render(<FollowingProjectCard item={{ ...item, media: [{ ...item.media[0], id: "image-1", type: "image", contentType: "image/jpeg", url: "/images/test.jpg" }] }} />);
+    const image = screen.getByRole("img", { name: "Et godt forsøg" });
+    expect(image).toHaveAttribute("loading", "lazy");
+    expect(image).toHaveAttribute("decoding", "async");
   });
 });

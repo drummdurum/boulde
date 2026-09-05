@@ -1,5 +1,6 @@
 import "server-only";
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import { cache } from "react";
 import { database, db } from "@/lib/db";
 
 export const SESSION_COOKIE = "boulde_session";
@@ -23,8 +24,12 @@ export async function registerUser(input: { name: string; email: string; usernam
 }
 export async function authenticateUser(email: string, password: string) { const result = await db.executeQuery("MATCH (u:User {email: $email}) RETURN u", { email: email.trim().toLowerCase() }, { database }); const user = result.records[0]?.get("u").properties as StoredUser | undefined; return user && passwordMatches(password, user.passwordHash) ? publicUser(user) : null; }
 export function createSession(userId: string) { const payload = Buffer.from(JSON.stringify({ userId, expiresAt: Date.now() + SESSION_MAX_AGE * 1000 })).toString("base64url"); const signature = createHmac("sha256", secret).update(payload).digest("base64url"); return `${payload}.${signature}`; }
-export async function userFromSession(token?: string) {
+async function lookupUserFromSession(token?: string) {
   if (!token) return null; const [payload, signature] = token.split("."); if (!payload || !signature) return null;
   const expected = createHmac("sha256", secret).update(payload).digest(); const supplied = Buffer.from(signature, "base64url"); if (expected.length !== supplied.length || !timingSafeEqual(expected, supplied)) return null;
   try { const session = JSON.parse(Buffer.from(payload, "base64url").toString()) as { userId: string; expiresAt: number }; if (session.expiresAt < Date.now()) return null; const result = await db.executeQuery("MATCH (u:User {id: $id}) RETURN u", { id: session.userId }, { database }); const user = result.records[0]?.get("u").properties as StoredUser | undefined; return user ? publicUser(user) : null; } catch { return null; }
 }
+
+// React scopes this memoization to the current server render. Layouts and pages can
+// therefore ask for the same session user without repeating the Neo4j lookup.
+export const userFromSession = cache(lookupUserFromSession);

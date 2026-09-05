@@ -41,5 +41,9 @@ export interface ClimbingSession {
   project?: Pick<ClimbingProject, "id" | "name" | "grade">;
   host: Pick<User, "id" | "name" | "initials">;
   participants: Array<{ id: string; name: string; initials: string }>;
+  viewerRole?: "host" | "invitee";
+  invitationStatus?: "pending" | "accepted" | "declined";
   createdAt: string;
 }
+
+export type SessionInvitee = Pick<User, "id" | "name" | "username" | "initials">;

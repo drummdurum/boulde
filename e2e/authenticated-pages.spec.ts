@@ -115,7 +115,7 @@ test("opretter og deler en global session med live tilmelding", async ({ page, b
   await dialog.getByLabel("Dato").fill(tomorrow);
   await dialog.getByLabel("Tid").fill("18:30");
   await dialog.getByLabel("Sted").fill("E2E Klatrehal");
-  await dialog.getByRole("button", { name: "Opret og få delingslink" }).click();
+  await dialog.getByRole("button", { name: "Opret session og invitér" }).click();
 
   const sessionCard = page.getByRole("article").filter({ hasText: sessionTitle });
   await expect(sessionCard).toBeVisible();
