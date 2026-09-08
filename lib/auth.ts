@@ -5,6 +5,7 @@ import { database, db } from "@/lib/db";
 
 export const SESSION_COOKIE = "boulde_session";
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 30;
+export const SESSION_COOKIE_SECURE = process.env.AUTH_COOKIE_SECURE === "true" || (process.env.AUTH_COOKIE_SECURE !== "false" && process.env.NODE_ENV === "production");
 type StoredUser = { id: string; name: string; email: string; username: string; location: string; passwordHash: string; role?: "user" | "admin"; createdAt: { toString(): string } | string };
 export type PublicUser = { id: string; name: string; email: string; username: string; location: string; role: "user" | "admin"; createdAt: string; initials: string };
 const secret = process.env.AUTH_SECRET || "boulde-local-development-secret-change-me";

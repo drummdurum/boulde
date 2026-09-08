@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createSession, registerUser, SESSION_COOKIE, SESSION_MAX_AGE } from "@/lib/auth";
+import { createSession, registerUser, SESSION_COOKIE, SESSION_COOKIE_SECURE, SESSION_MAX_AGE } from "@/lib/auth";
 import { requestWelcomeEmail } from "@/lib/mail-service";
 export async function POST(request: Request) {
   try {
@@ -12,6 +12,6 @@ export async function POST(request: Request) {
     let welcomeEmailQueued = true;
     try { await requestWelcomeEmail(user); } catch (error) { welcomeEmailQueued = false; console.error("Mailservicen kunne ikke modtage velkomstmailen:", error); }
     const response = NextResponse.json({ user, welcomeEmailQueued }, { status: 201 });
-    response.cookies.set(SESSION_COOKIE, createSession(user.id), { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: SESSION_MAX_AGE }); return response;
+    response.cookies.set(SESSION_COOKIE, createSession(user.id), { httpOnly: true, sameSite: "lax", secure: SESSION_COOKIE_SECURE, path: "/", maxAge: SESSION_MAX_AGE }); return response;
   } catch (error) { const message = error instanceof Error ? error.message : "Kunne ikke oprette brugeren."; return NextResponse.json({ error: message }, { status: message.includes("allerede") ? 409 : 500 }); }
 }

@@ -13,17 +13,17 @@ export function FeedPost({ post }: { post: Post }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
   return <article className="overflow-hidden rounded-[26px] border border-line bg-limestone shadow-soft">
     <div className="flex items-center gap-3 p-4 sm:p-5">
-      <Avatar user={post.author} /><div className="min-w-0 flex-1"><p data-no-translate className="truncate text-sm font-extrabold text-ink">{post.author.name}</p><p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted"><span>{post.createdAt}</span><span>·</span><MapPin size={12} /><span data-no-translate className="truncate">{post.location}</span></p></div>
+      <Avatar user={post.author} /><div className="min-w-0 flex-1"><p data-no-translate className="truncate text-sm font-extrabold text-ink">{post.author.name}</p><p className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted"><span>{post.createdAt}</span>{post.location && <><span>·</span><MapPin size={12} /><span data-no-translate className="truncate">{post.location}</span></>}</p></div>
       <Button variant="ghost" size="icon" aria-label={`Flere handlinger for ${post.author.name}s opslag`}><MoreHorizontal size={20} /></Button>
     </div>
-    <div className="relative aspect-[4/3] overflow-hidden bg-pine">
-      <Image src={post.image} alt={post.imageAlt} fill sizes="(max-width: 1024px) 100vw, 600px" className={`object-cover ${post.id === "p3" ? "scale-110 object-left" : ""}`} priority={post.id === "p1"} />
+    {post.image && <div className="relative aspect-[4/3] overflow-hidden bg-pine">
+      {post.isVideo ? <video src={post.image} controls playsInline preload="metadata" className="h-full w-full object-cover" aria-label={post.imageAlt || "Video vedhæftet opslag"} /> : <Image src={post.image} alt={post.imageAlt || "Billede vedhæftet opslag"} fill sizes="(max-width: 1024px) 100vw, 600px" className={`object-cover ${post.id === "p3" ? "scale-110 object-left" : ""}`} priority={post.id === "p1"} />}
       <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-pine/50 to-transparent" />
       {post.isVideo && <button aria-label="Afspil klatrevideo" className="absolute left-1/2 top-1/2 grid h-16 w-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-limestone/90 text-pine shadow-lg transition hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay"><Play className="ml-1" fill="currentColor" size={25} /></button>}
       {post.completed && <span className="absolute bottom-4 left-4 flex items-center gap-2 rounded-full bg-limestone/95 px-3 py-2 text-xs font-extrabold text-positive"><CheckCircle2 size={16} />Gennemført</span>}
-    </div>
+    </div>}
     <div className="p-4 sm:p-5">
-      <div className="mb-3 flex items-center gap-2"><Badge>{post.type}</Badge><Badge tone="warm">{post.grade}</Badge><span data-no-translate className="ml-auto text-xs font-bold text-muted">{post.route}</span></div>
+      {(post.type || post.grade || post.route) && <div className="mb-3 flex items-center gap-2">{post.type && <Badge>{post.type}</Badge>}{post.grade && <Badge tone="warm">{post.grade}</Badge>}{post.route && <span data-no-translate className="ml-auto text-xs font-bold text-muted">{post.route}</span>}</div>}
       <p data-no-translate className="text-sm leading-6 text-ink"><strong className="mr-1">{post.author.username}</strong>{post.description}</p>
       <div className="mt-4 flex items-center border-t border-line pt-3">
         <Button onClick={() => setLiked(!liked)} aria-pressed={liked} variant="ghost" size="sm" className={liked ? "text-clay" : ""}><Heart size={19} fill={liked ? "currentColor" : "none"} />{post.likes + (liked && !post.initiallyLiked ? 1 : !liked && post.initiallyLiked ? -1 : 0)}</Button>

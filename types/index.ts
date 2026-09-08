@@ -9,8 +9,9 @@ export interface Comment {
   id: string; author: User; body: string; createdAt: string;
 }
 export interface Post {
-  id: string; author: User; createdAt: string; location: string; route: string; description: string;
-  type: ClimbingType; grade: ClimbingGrade; image: string; imageAlt: string; isVideo?: boolean;
+  id: string; author: User; createdAt: string; description: string;
+  location?: string; route?: string; type?: ClimbingType; grade?: ClimbingGrade;
+  image?: string; imageAlt?: string; isVideo?: boolean;
   completed?: boolean; likes: number; comments: Comment[]; initiallyLiked?: boolean; initiallySaved?: boolean;
 }
 export interface ClimbingProject {

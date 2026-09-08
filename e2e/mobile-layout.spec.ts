@@ -29,3 +29,34 @@ test("login og oprettelse passer på en smal telefon", async ({ context, page })
     expect(overflow, `${path} har vandret overflow`).toBeLessThanOrEqual(1);
   }
 });
+
+test("vælg projektbillede åbner telefonens filvælger", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("E-mail", { exact: true }).fill("test@boulde.local");
+  await page.getByLabel("Adgangskode", { exact: true }).fill("Test1234!");
+  await page.getByRole("button", { name: "Log ind", exact: true }).click();
+  await page.goto("/projekter");
+
+  await page.getByRole("button", { name: /^(Nyt projekt|Opret dit første projekt)$/ }).first().click();
+  const dialog = page.getByRole("dialog", { name: "Opret projekt" });
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await dialog.getByLabel("Vælg projektbillede").click();
+  const fileChooser = await fileChooserPromise;
+
+  expect(fileChooser.isMultiple()).toBe(false);
+});
+
+test("billedeknappen i dashboardets opslagspopup åbner filvælgeren", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("E-mail", { exact: true }).fill("test@boulde.local");
+  await page.getByLabel("Adgangskode", { exact: true }).fill("Test1234!");
+  await page.getByRole("button", { name: "Log ind", exact: true }).click();
+
+  await page.getByRole("button", { name: "Opret opslag" }).last().click();
+  const dialog = page.getByRole("dialog", { name: "Opret opslag" });
+  const fileChooserPromise = page.waitForEvent("filechooser");
+  await dialog.getByLabel("Vælg billede til opslag").click();
+  const fileChooser = await fileChooserPromise;
+
+  expect(fileChooser.isMultiple()).toBe(false);
+});

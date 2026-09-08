@@ -1,11 +1,10 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+import { randomBytes } from "node:crypto";
 import { SESSION_COOKIE, userFromSession } from "@/lib/auth";
 import { createUserPost, getUserPosts } from "@/lib/user-data";
-import type { ClimbingGrade, ClimbingType } from "@/types";
-
-const grades = new Set(["5+", "6A", "6B", "6C", "7A", "7A+", "7B", "7C", "8A"]);
-const types = new Set(["Boulder", "Sportsklatring", "Indendørs"]);
 async function currentUser() { return userFromSession(cookies().get(SESSION_COOKIE)?.value); }
 
 export async function GET() {
@@ -15,8 +14,21 @@ export async function GET() {
 export async function POST(request: Request) {
   const user = await currentUser();
   if (!user) return NextResponse.json({ error: "Du skal være logget ind." }, { status: 401 });
-  const body = await request.json();
-  if (![body.description, body.route, body.location].every(value => typeof value === "string" && value.trim())) return NextResponse.json({ error: "Udfyld beskrivelse, rute og sted." }, { status: 400 });
-  if (!grades.has(body.grade) || !types.has(body.type)) return NextResponse.json({ error: "Vælg en gyldig grade og klatretype." }, { status: 400 });
-  return NextResponse.json({ post: await createUserPost(user, { ...body, grade: body.grade as ClimbingGrade, type: body.type as ClimbingType }) }, { status: 201 });
+  const body = await request.formData();
+  const description = body.get("description"); const mediaFile = body.get("media");
+  if (typeof description !== "string" || !description.trim()) return NextResponse.json({ error: "Skriv noget i opslaget." }, { status: 400 });
+  let media: string | undefined; let isVideo = false;
+  if (mediaFile instanceof File && mediaFile.size > 0) {
+    const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" };
+    const extension = extensions[mediaFile.type];
+    if (!extension) return NextResponse.json({ error: "Vælg en gyldig billed- eller videofil." }, { status: 400 });
+    isVideo = mediaFile.type.startsWith("video/");
+    if (mediaFile.size > (isVideo ? 50 : 8) * 1024 * 1024) return NextResponse.json({ error: isVideo ? "Videoen må højst fylde 50 MB." : "Billedet må højst fylde 8 MB." }, { status: 400 });
+    const filename = `${randomBytes(12).toString("hex")}.${extension}`;
+    const uploadDirectory = path.join(process.cwd(), "public", "uploads", "posts");
+    await mkdir(uploadDirectory, { recursive: true });
+    await writeFile(path.join(uploadDirectory, filename), Buffer.from(await mediaFile.arrayBuffer()));
+    media = `/api/uploads/posts/${filename}`;
+  }
+  return NextResponse.json({ post: await createUserPost(user, { description, media, isVideo }) }, { status: 201 });
 }
