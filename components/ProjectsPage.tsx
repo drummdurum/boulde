@@ -197,18 +197,6 @@ export function ProjectsPage({
             </button>
           ))}
         </div>
-        <div ref={detailRef} className="scroll-mt-5">
-          <VisibilityControl
-            project={selected}
-            onChange={() => changeVisibility(selected)}
-          />
-          <ProjectDetail
-              project={selected}
-              onLog={() => setLogOpen(true)}
-              onEdit={() => setEditOpen(true)}
-              mediaVersion={mediaVersion}
-            />
-        </div>
         <section aria-labelledby="project-picker-title" className="mb-7">
           <div className="mb-3 flex items-end justify-between">
             <div>
@@ -245,6 +233,10 @@ export function ProjectsPage({
             )}
           </div>
         </section>
+        <div ref={detailRef} className="scroll-mt-5">
+          <VisibilityControl project={selected} onChange={() => changeVisibility(selected)} />
+          <ProjectDetail project={selected} onLog={() => setLogOpen(true)} onEdit={() => setEditOpen(true)} mediaVersion={mediaVersion} />
+        </div>
         {connectionProjects.length > 0 && (
           <section
             className="mt-10"
