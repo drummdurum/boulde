@@ -203,11 +203,11 @@ export function ProjectsPage({
             onChange={() => changeVisibility(selected)}
           />
           <ProjectDetail
-            project={selected}
-            onLog={() => setLogOpen(true)}
-            onEdit={() => setEditOpen(true)}
-          />
-          <ProjectMediaPanel projectId={selected.id} version={mediaVersion} />
+              project={selected}
+              onLog={() => setLogOpen(true)}
+              onEdit={() => setEditOpen(true)}
+              mediaVersion={mediaVersion}
+            />
         </div>
         <section aria-labelledby="project-picker-title" className="mb-7">
           <div className="mb-3 flex items-end justify-between">
@@ -860,10 +860,12 @@ function ProjectDetail({
   project,
   onLog,
   onEdit,
+  mediaVersion = 0,
 }: {
   project: ClimbingProject;
   onLog: () => void;
   onEdit: () => void;
+  mediaVersion?: number;
 }) {
   return (
     <section
@@ -934,25 +936,7 @@ function ProjectDetail({
             Nyt forsøg
           </Button>
         </div>
-        <div className="my-6 border-t border-line" />
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">
-              Visuel arbejdslog
-            </p>
-            <h3 className="mt-1 text-xl font-extrabold text-ink">
-              Seneste forsøg
-            </h3>
-          </div>
-          <span className="text-xs font-bold text-muted">
-            {project.attempts} i alt
-          </span>
-        </div>
-        <p className="rounded-2xl border border-dashed border-line p-6 text-center text-sm font-semibold text-muted">
-          {project.attempts > 0
-            ? "Dine gemte billeder og videoer vises nedenfor."
-            : "Ingen forsøg logget endnu."}
-        </p>
+        <ProjectMediaPanel projectId={project.id} version={mediaVersion} />
       </div>
     </section>
   );

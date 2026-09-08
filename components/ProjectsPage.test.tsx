@@ -164,8 +164,5 @@ describe("ProjectsPage", () => {
   it("viser ikke opdigtede forsøgsnoter fra demo-data", () => {
     render(<ProjectsPage initialProjects={[{ ...project, attempts: 12 }]} />);
     expect(screen.queryByText("Forsøg #12")).not.toBeInTheDocument();
-    expect(
-      screen.getAllByText("Dine gemte billeder og videoer vises nedenfor."),
-    ).not.toHaveLength(0);
   });
 });
