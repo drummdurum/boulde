@@ -197,6 +197,7 @@ export function ProjectsPage({
             </button>
           ))}
         </div>
+        {connectionProjects.length > 0 && <ConnectionProjects projects={connectionProjects} />}
         <section aria-labelledby="project-picker-title" className="mb-7">
           <div className="mb-3 flex items-end justify-between">
             <div>
@@ -239,7 +240,7 @@ export function ProjectsPage({
         </div>
         {connectionProjects.length > 0 && (
           <section
-            className="mt-10"
+            className="hidden"
             aria-labelledby="connection-projects-title"
           >
             <p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">
@@ -570,7 +571,7 @@ function CreateProjectModal({
           </label>
           <label className="block text-sm font-extrabold">
             Status
-            <select name="status" defaultValue="Ny" className={inputClass}>
+            <select name="status" defaultValue="Ny" onChange={(event) => { if (event.target.value === "Gennemført") setProgress(100); }} className={inputClass}>
               {filters.slice(1).map((status) => (
                 <option key={status}>{status}</option>
               ))}
