@@ -163,6 +163,6 @@ describe("ProjectsPage", () => {
 
   it("viser ikke opdigtede forsøgsnoter fra demo-data", () => {
     render(<ProjectsPage initialProjects={[{ ...project, attempts: 12 }]} />);
-    expect(screen.queryByText("Forsøg #12")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Fik fat i slutgrebet/)).not.toBeInTheDocument();
   });
 });

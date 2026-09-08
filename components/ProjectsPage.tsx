@@ -936,7 +936,15 @@ function ProjectDetail({
             Nyt forsøg
           </Button>
         </div>
-        <ProjectMediaPanel projectId={project.id} version={mediaVersion} />
+        <ProjectMediaPanel
+          projectId={project.id}
+          version={mediaVersion}
+          onNewAttempt={onLog}
+          attempts={project.attempts}
+          note={project.note}
+          progress={project.progress}
+          status={project.status}
+        />
       </div>
     </section>
   );

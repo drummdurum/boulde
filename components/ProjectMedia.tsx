@@ -9,10 +9,18 @@ export function ProjectMediaPanel({
   projectId,
   version = 0,
   onNewAttempt,
+  attempts = 0,
+  note = "",
+  progress = 0,
+  status = "",
 }: {
   projectId: string;
   version?: number;
   onNewAttempt?: () => void;
+  attempts?: number;
+  note?: string;
+  progress?: number;
+  status?: string;
 }) {
   const [media, setMedia] = useState<ProjectMedia[]>([]);
   useEffect(() => {
@@ -36,9 +44,18 @@ export function ProjectMediaPanel({
       </div>
       {!media.length ? (
         <div className="mt-5 rounded-2xl border border-dashed border-line bg-sand/50 p-6 text-center">
-          <Camera className="mx-auto text-clay" size={24} />
-          <p className="mt-2 text-sm font-extrabold">Start din arbejdslog</p>
-          <p className="mt-1 text-sm text-muted">Gem et billede, en video eller en kort note efter dit næste forsøg.</p>
+          {attempts ? <>
+            <div className="flex items-center justify-between text-left text-xs font-extrabold text-muted">
+              <span>Forsøg #{attempts}</span><span>{status}</span>
+            </div>
+            <div className="mt-4 h-2 overflow-hidden rounded-full bg-sand"><div className="h-full rounded-full bg-ochre" style={{ width: `${progress ?? 0}%` }} /></div>
+            <p className="mt-3 text-left text-sm font-semibold leading-6 text-muted">{note || "Forsøget blev gemt uden en note eller et medie."}</p>
+          </> : <>
+            <Camera className="mx-auto text-clay" size={24} />
+            <p className="mt-2 text-sm font-extrabold">Start din arbejdslog</p>
+            <p className="mt-1 text-sm text-muted">Gem et billede, en video eller en kort note efter dit næste forsøg.</p>
+          </>}
+          {onNewAttempt && <Button onClick={onNewAttempt} variant="outline" className="mt-4">{attempts ? "Log næste forsøg" : "Log første forsøg"}</Button>}
         </div>
       ) : (
         <div className="relative mt-5 space-y-4 before:absolute before:bottom-3 before:left-[9px] before:top-3 before:w-px before:bg-line">
