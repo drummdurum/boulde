@@ -743,6 +743,7 @@ function EditProjectModal({
             <select
               name="status"
               defaultValue={project.status}
+              onChange={(event) => { if (event.target.value === "Gennemført") setProgress(100); }}
               className="mt-2 h-11 w-full rounded-2xl border border-line bg-sand px-4 font-normal"
             >
               {filters.slice(1).map((status) => (

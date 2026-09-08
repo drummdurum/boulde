@@ -234,7 +234,7 @@ export function MediaUploadModal({
             <select
               value={status}
               onChange={(event) =>
-                setStatus(event.target.value as ClimbingProject["status"])
+                (setStatus(event.target.value as ClimbingProject["status"]), event.target.value === "Gennemført" && setProgress(100))
               }
               className="mt-2 h-11 w-full rounded-2xl border border-line bg-sand px-4 font-normal"
             >
