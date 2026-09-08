@@ -197,34 +197,17 @@ export function ProjectsPage({
             </button>
           ))}
         </div>
-        <div className="grid items-start gap-6 xl:grid-cols-[360px_minmax(0,1fr)]">
-          <section aria-label="Projektliste" className="space-y-3">
-            {visible.map((project) => (
-              <ProjectListCard
-                key={project.id}
-                project={project}
-                active={selected.id === project.id}
-                onClick={() => setSelected(project)}
-              />
-            ))}
-            {visible.length === 0 && (
-              <p className="rounded-[22px] border border-dashed border-line p-8 text-center text-sm text-muted">
-                Ingen projekter med denne status.
-              </p>
-            )}
-          </section>
-          <div>
-            <VisibilityControl
-              project={selected}
-              onChange={() => changeVisibility(selected)}
-            />
-            <ProjectDetail
-              project={selected}
-              onLog={() => setLogOpen(true)}
-              onEdit={() => setEditOpen(true)}
-            />
-            <ProjectMediaPanel projectId={selected.id} version={mediaVersion} onNewAttempt={() => setLogOpen(true)} />
-          </div>
+        <div ref={detailRef} className="scroll-mt-5">
+          <VisibilityControl
+            project={selected}
+            onChange={() => changeVisibility(selected)}
+          />
+          <ProjectDetail
+            project={selected}
+            onLog={() => setLogOpen(true)}
+            onEdit={() => setEditOpen(true)}
+          />
+          <ProjectMediaPanel projectId={selected.id} version={mediaVersion} />
         </div>
         <section aria-labelledby="project-picker-title" className="mb-7">
           <div className="mb-3 flex items-end justify-between">
@@ -262,17 +245,6 @@ export function ProjectsPage({
             )}
           </div>
         </section>
-        <div ref={detailRef} className="scroll-mt-5">
-          <VisibilityControl
-            project={selected}
-            onChange={() => changeVisibility(selected)}
-          />
-          <ProjectDetail
-            project={selected}
-            onLog={() => setLogOpen(true)}
-            onEdit={() => setEditOpen(true)}
-          />
-        </div>
         {connectionProjects.length > 0 && (
           <section
             className="mt-10"
