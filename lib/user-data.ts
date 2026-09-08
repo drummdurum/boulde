@@ -140,6 +140,7 @@ export async function createUserProject(
     grade: ClimbingGrade;
     note: string;
     image?: string;
+    attempt?: boolean;
     visible?: boolean;
     progress?: number;
     status?: ClimbingProject["status"];
@@ -191,13 +192,16 @@ export async function updateUserProject(
     status: ClimbingProject["status"];
     note: string;
     image?: string;
+    attempt?: boolean;
   },
 ) {
   const result = await db.executeQuery(
     `MATCH (:User {id: $userId})-[:WORKS_ON]->(p:Project {id: $projectId})
     SET p.progress = $progress, p.status = $status, p.note = $note,
         p.image = CASE WHEN $image IS NULL THEN p.image ELSE $image END,
-        p.updatedAt = datetime()
+        p.updatedAt = datetime(),
+        p.attempts = coalesce(p.attempts, 0) + CASE WHEN $attempt THEN 1 ELSE 0 END,
+        p.lastAttempt = CASE WHEN $attempt THEN toString(date()) ELSE p.lastAttempt END
     RETURN p`,
     {
       userId,
@@ -206,6 +210,7 @@ export async function updateUserProject(
       status: input.status,
       note: input.note.trim(),
       image: input.image || null,
+      attempt: input.attempt === true,
     },
     { database, routing: "WRITE" },
   );

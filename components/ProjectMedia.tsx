@@ -137,6 +137,7 @@ export function MediaUploadModal({
       values.set("progress", String(progress));
       values.set("status", status);
       values.set("note", note);
+      values.set("attempt", String(files.length === 0));
       const update = await fetch("/api/projects", {
         method: "PATCH",
         body: values,

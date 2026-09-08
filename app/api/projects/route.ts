@@ -177,6 +177,7 @@ export async function PATCH(request: Request) {
       status: status as ProjectStatus,
       note: typeof note === "string" ? note : "",
       image,
+      ...(body.get("attempt") === "true" ? { attempt: true } : {}),
     });
     return project
       ? NextResponse.json({ project })
