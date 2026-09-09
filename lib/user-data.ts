@@ -368,6 +368,7 @@ function publicSession(
   const project = projectNode?.properties;
   const invitationStatus = record.get("invitationStatus") as
     ClimbingSession["invitationStatus"] | null;
+  const invitationReadAt = record.get("invitationReadAt") as string | null;
   return {
     id: session.id,
     shareId: session.shareId,
@@ -390,7 +391,11 @@ function publicSession(
     ...(viewerId === host.id
       ? { viewerRole: "host" as const }
       : invitationStatus
-        ? { viewerRole: "invitee" as const, invitationStatus }
+        ? {
+            viewerRole: "invitee" as const,
+            invitationStatus,
+            ...(invitationReadAt ? { invitationReadAt } : {}),
+          }
         : {}),
   };
 }
@@ -449,7 +454,8 @@ export async function getSharedSession(
     OPTIONAL MATCH (accepted:User)-[:INVITED_TO {status: 'accepted'}]->(s)
     WITH s, p, host, guests, collect(accepted {.*}) AS accepted
     OPTIONAL MATCH (viewer:User {id: $viewerId})-[invitation:INVITED_TO]->(s)
-    RETURN s, p, host, guests, accepted, invitation.status AS invitationStatus`,
+    RETURN s, p, host, guests, accepted, invitation.status AS invitationStatus,
+      toString(invitation.readAt) AS invitationReadAt`,
     { shareId, viewerId: viewerId || null },
     { database },
   );
@@ -470,7 +476,8 @@ export async function getUserSessions(
     OPTIONAL MATCH (accepted:User)-[:INVITED_TO {status: 'accepted'}]->(s)
     WITH u, s, host, p, guests, collect(DISTINCT accepted {.*}) AS accepted
     OPTIONAL MATCH (u)-[invitation:INVITED_TO]->(s)
-    RETURN s, p, host, guests, accepted, invitation.status AS invitationStatus
+    RETURN s, p, host, guests, accepted, invitation.status AS invitationStatus,
+      toString(invitation.readAt) AS invitationReadAt
     ORDER BY s.date, s.time`,
     { userId },
     { database },
@@ -484,12 +491,29 @@ export async function respondToSessionInvitation(
 ) {
   const result = await db.executeQuery(
     `MATCH (:User {id: $userId})-[invitation:INVITED_TO]->(s:ClimbingSession {shareId: $shareId})
-    SET invitation.status = $status, invitation.respondedAt = datetime()
+    SET invitation.status = $status, invitation.respondedAt = datetime(), invitation.readAt = datetime()
     RETURN s.shareId AS shareId`,
     { userId, shareId, status },
     { database, routing: "WRITE" },
   );
   return result.records.length ? getSharedSession(shareId, userId) : null;
+}
+export async function inviteConnectionsToSession(
+  hostId: string,
+  shareId: string,
+  inviteeIds: string[],
+) {
+  const result = await db.executeQuery(
+    `MATCH (host:User {id: $hostId})-[:HOSTS]->(s:ClimbingSession {shareId: $shareId})
+    UNWIND $inviteeIds AS inviteeId
+    MATCH (host)-[:CONNECTED_WITH]-(invitee:User {id: inviteeId})
+    MERGE (invitee)-[invitation:INVITED_TO]->(s)
+    ON CREATE SET invitation.status = 'pending', invitation.invitedAt = datetime()
+    RETURN count(invitation) AS invitationCount`,
+    { hostId, shareId, inviteeIds },
+    { database, routing: "WRITE" },
+  );
+  return result.records.length > 0;
 }
 export async function joinSharedSession(shareId: string, name: string) {
   const normalized = name.trim();

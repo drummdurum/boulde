@@ -15,6 +15,30 @@ export type SocialUser = {
 function initials(name: string) { return name.split(/\s+/).map(part => part[0]).join("").slice(0, 2).toUpperCase(); }
 
 export type ConnectedUser = Pick<SocialUser, "id" | "name" | "username" | "initials">;
+export type ConnectionRequest = ConnectedUser & { createdAt: string };
+export type MailRecipient = { id: string; name: string; email: string };
+
+export async function getMailRecipients(userIds: string[]): Promise<MailRecipient[]> {
+  if (!userIds.length) return [];
+  const result = await db.executeQuery(
+    `MATCH (u:User) WHERE u.id IN $userIds RETURN u.id AS id, u.name AS name, u.email AS email`,
+    { userIds }, { database },
+  );
+  return result.records.map(record => ({ id: record.get("id"), name: record.get("name"), email: record.get("email") }));
+}
+
+export async function getIncomingConnectionRequests(userId: string): Promise<ConnectionRequest[]> {
+  const result = await db.executeQuery(
+    `MATCH (:User {id: $userId})<-[request:REQUESTS_CONNECTION]-(other:User)
+     RETURN other, toString(request.createdAt) AS createdAt
+     ORDER BY request.createdAt DESC`,
+    { userId }, { database },
+  );
+  return result.records.map(record => {
+    const user = record.get("other").properties as { id: string; name: string; username: string };
+    return { id: user.id, name: user.name, username: user.username, initials: initials(user.name), createdAt: record.get("createdAt") || "" };
+  });
+}
 
 export async function getConnectedUsers(userId: string): Promise<ConnectedUser[]> {
   const result = await db.executeQuery(

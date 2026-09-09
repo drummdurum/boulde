@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { CalendarDays, CheckCircle2, ImagePlus, MapPinned, Target } from "lucide-react";
+import { CalendarDays, CheckCircle2, ImagePlus, MapPinned, Target, Users } from "lucide-react";
 import type { User } from "@/types";
 import type { ClimbingProject, ClimbingSession, Post, ProjectFeedItem } from "@/types";
 import { DashboardHeader } from "./DashboardHeader";
@@ -10,22 +10,30 @@ import { ProjectSection } from "./ProjectSection";
 import { CreatePostModal } from "./CreatePostModal";
 import { FeedPost } from "./FeedPost";
 import { FollowingProjectCard } from "./FollowingProjectCard";
+import type { ConnectionRequest } from "@/lib/social";
 
-export function Dashboard({ user, initialPosts, initialProjects, followingProjects = [], invitations = [] }: { user: User; initialPosts: Post[]; initialProjects: ClimbingProject[]; followingProjects?: ProjectFeedItem[]; invitations?: ClimbingSession[] }) {
+export function Dashboard({ user, initialPosts, initialProjects, followingProjects = [], invitations = [], connectionRequests = [] }: { user: User; initialPosts: Post[]; initialProjects: ClimbingProject[]; followingProjects?: ProjectFeedItem[]; invitations?: ClimbingSession[]; connectionRequests?: ConnectionRequest[] }) {
   const [createOpen, setCreateOpen] = useState(false);
   const [posts, setPosts] = useState(initialPosts);
   const [sessionInvitations, setSessionInvitations] = useState(invitations);
+  const [pendingConnections, setPendingConnections] = useState(connectionRequests);
   useEffect(() => { fetch("/api/sessions").then(response => response.ok ? response.json() : { sessions: [] }).then(result => setSessionInvitations((result.sessions || []).filter((session: ClimbingSession) => session.viewerRole === "invitee" && session.invitationStatus === "pending"))).catch(() => undefined); }, []);
   const month = new Date().toISOString().slice(0, 7);
+  const completedClimbs = initialProjects.filter(project => project.status === "Gennemført").length;
+  const visitedLocations = new Set(initialProjects
+    .filter(project => project.attempts > 0 || project.status === "Gennemført")
+    .map(project => project.location.trim().toLocaleLowerCase("da-DK"))
+    .filter(Boolean)).size;
   const completedThisMonth = initialProjects.filter(project => project.status === "Gennemført" && project.lastAttempt.startsWith(month)).length;
   return <main className="min-h-screen px-4 pb-28 pt-6 sm:px-6 lg:ml-[238px] lg:px-8 lg:pb-10 xl:px-10">
     <div className="mx-auto max-w-[1460px]">
-      <DashboardHeader user={user} onCreate={() => setCreateOpen(true)} />
-      {sessionInvitations.length > 0 && <SessionInvitations invitations={sessionInvitations} />}
+      <DashboardHeader user={user} onCreate={() => setCreateOpen(true)} notificationCount={sessionInvitations.length + pendingConnections.length} />
+      {pendingConnections.length > 0 && <ConnectionRequests requests={pendingConnections} onHandled={id => setPendingConnections(current => current.filter(item => item.id !== id))} />}
+      {sessionInvitations.length > 0 && <SessionInvitations invitations={sessionInvitations} onHandled={id => setSessionInvitations(current => current.filter(item => item.id !== id))} />}
       <section aria-label="Din klatrestatus" className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4">
-        <StatCard label="Gennemførte klatringer" value="0" change="Kom i gang" icon={CheckCircle2} />
+        <StatCard label="Gennemførte klatringer" value={String(completedClimbs)} change={completedClimbs ? `${completedClimbs} i alt` : "Kom i gang"} icon={CheckCircle2} />
         <StatCard label="Aktive projekter" value={String(initialProjects.filter(project => project.status !== "Gennemført").length)} change={initialProjects.length ? "Dine projekter" : "Ingen endnu"} icon={Target} tone="ochre" />
-        <StatCard label="Klatresteder besøgt" value="0" change="Ingen endnu" icon={MapPinned} tone="moss" />
+        <StatCard label="Klatresteder besøgt" value={String(visitedLocations)} change={visitedLocations ? `${visitedLocations} ${visitedLocations === 1 ? "sted" : "steder"}` : "Ingen endnu"} icon={MapPinned} tone="moss" />
         <StatCard label="Klatringer denne måned" value={String(completedThisMonth)} change={completedThisMonth ? "Gennemført" : "Ingen endnu"} icon={CalendarDays} tone="clay" />
       </section>
       <div className="grid items-start gap-8 xl:grid-cols-[minmax(0,1.55fr)_minmax(330px,.85fr)]">
@@ -37,12 +45,28 @@ export function Dashboard({ user, initialPosts, initialProjects, followingProjec
   </main>;
 }
 
-function SessionInvitations({ invitations }: { invitations: ClimbingSession[] }) {
-  const [items, setItems] = useState(invitations);
-  async function respond(session: ClimbingSession, status: "accepted" | "declined") {
-    const response = await fetch(`/api/sessions/${session.shareId}/invitation`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
-    if (response.ok) setItems(current => current.filter(item => item.id !== session.id));
+function ConnectionRequests({ requests, onHandled }: { requests: ConnectionRequest[]; onHandled: (id: string) => void }) {
+  const [pending, setPending] = useState<string>();
+  const [error, setError] = useState("");
+  async function respond(id: string, action: "accept" | "reject") {
+    setPending(id); setError("");
+    const response = await fetch(`/api/users/${id}/connection`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action }) });
+    setPending(undefined);
+    if (response.ok) onHandled(id);
+    else setError((await response.json().catch(() => ({}))).error || "Kunne ikke besvare forbindelsesanmodningen.");
   }
-  if (!items.length) return null;
-  return <section aria-labelledby="session-invitations-title" className="mb-8 rounded-[24px] border border-line bg-limestone p-5 shadow-soft"><div className="flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">Invitation</p><h2 id="session-invitations-title" className="mt-1 text-xl font-extrabold">Du er inviteret til en session</h2></div><CalendarDays className="text-clay" /></div><div className="mt-4 grid gap-3 md:grid-cols-2">{items.map(session => <article key={session.id} className="rounded-2xl bg-sand p-4"><h3 className="font-extrabold">{session.title}</h3><p className="mt-1 text-sm font-semibold text-muted">Inviteret af {session.host.name} · {session.date} kl. {session.time}</p><p className="mt-1 text-sm font-semibold text-muted">{session.location}</p><div className="mt-4 flex gap-2"><button onClick={() => respond(session, "accepted")} className="rounded-full bg-pine px-4 py-2 text-xs font-extrabold text-limestone">Acceptér</button><button onClick={() => respond(session, "declined")} className="rounded-full border border-line px-4 py-2 text-xs font-extrabold text-ink">Afslå</button><Link href={`/session/${session.shareId}`} className="ml-auto rounded-full border border-line px-4 py-2 text-xs font-extrabold text-ink">Åbn</Link></div></article>)}</div></section>;
+  return <section aria-labelledby="connection-requests-title" className="mb-8 rounded-[24px] border border-line bg-limestone p-5 shadow-soft"><div className="flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">Ny forbindelse</p><h2 id="connection-requests-title" className="mt-1 text-xl font-extrabold">Forbindelsesanmodninger</h2></div><Users className="text-clay" /></div><div className="mt-4 grid gap-3 md:grid-cols-2">{requests.map(request => <article key={request.id} className="flex items-center gap-3 rounded-2xl bg-sand p-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-pine text-xs font-extrabold text-limestone">{request.initials}</span><div className="min-w-0 flex-1"><h3 className="truncate font-extrabold">{request.name}</h3><p className="truncate text-sm font-semibold text-muted">@{request.username} vil oprette forbindelse</p></div><div className="flex gap-2"><button disabled={pending === request.id} onClick={() => respond(request.id, "accept")} className="rounded-full bg-pine px-4 py-2 text-xs font-extrabold text-limestone disabled:opacity-50">Acceptér</button><button disabled={pending === request.id} onClick={() => respond(request.id, "reject")} className="rounded-full border border-line px-4 py-2 text-xs font-extrabold text-ink disabled:opacity-50">Afvis</button></div></article>)}</div>{error && <p role="alert" className="mt-3 text-sm font-bold text-red-700">{error}</p>}</section>;
+}
+
+function SessionInvitations({ invitations, onHandled }: { invitations: ClimbingSession[]; onHandled: (id: string) => void }) {
+  const [pending, setPending] = useState<string>();
+  const [error, setError] = useState("");
+  async function respond(session: ClimbingSession, status: "accepted" | "declined") {
+    setPending(session.id); setError("");
+    const response = await fetch(`/api/sessions/${session.shareId}/invitation`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+    setPending(undefined);
+    if (response.ok) onHandled(session.id);
+    else setError((await response.json().catch(() => ({}))).error || "Invitationen kunne ikke håndteres.");
+  }
+  return <section aria-labelledby="session-invitations-title" className="mb-8 rounded-[24px] border border-line bg-limestone p-5 shadow-soft"><div className="flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">Invitation</p><h2 id="session-invitations-title" className="mt-1 text-xl font-extrabold">Sessioninvitationer</h2></div><CalendarDays className="text-clay" /></div><div className="mt-4 grid gap-3 md:grid-cols-2">{invitations.map(session => <article key={session.id} className="rounded-2xl bg-sand p-4"><h3 className="font-extrabold">{session.title}</h3><p className="mt-1 text-sm font-semibold text-muted">Inviteret af {session.host.name} · {session.date} kl. {session.time}</p><p className="mt-1 text-sm font-semibold text-muted">{session.location}</p><div className="mt-4 flex gap-2"><button disabled={pending === session.id} onClick={() => respond(session, "accepted")} className="rounded-full bg-pine px-4 py-2 text-xs font-extrabold text-limestone disabled:opacity-50">Acceptér</button><button disabled={pending === session.id} onClick={() => respond(session, "declined")} className="rounded-full border border-line px-4 py-2 text-xs font-extrabold text-ink disabled:opacity-50">Afslå</button><Link href={`/session/${session.shareId}`} className="ml-auto rounded-full border border-line px-4 py-2 text-xs font-extrabold text-ink">Åbn</Link></div></article>)}</div>{error && <p role="alert" className="mt-3 text-sm font-bold text-red-700">{error}</p>}</section>;
 }

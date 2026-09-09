@@ -76,6 +76,23 @@ describe("ProjectsPage", () => {
     expect(screen.getByLabelText("Status")).toHaveValue("Ny");
   });
 
+  it("synkroniserer 100 procent og gennemført i formularen", async () => {
+    const user = userEvent.setup();
+    render(<ProjectsPage initialProjects={[project]} />);
+    await user.click(screen.getAllByRole("button", { name: "Nyt projekt" })[0]);
+    const progress = screen.getByRole("slider", {
+      name: "Fremskridt i procent",
+    });
+    const status = screen.getByLabelText("Status");
+
+    fireEvent.change(progress, { target: { value: "100" } });
+    expect(status).toHaveValue("Gennemført");
+
+    fireEvent.change(progress, { target: { value: "50" } });
+    await user.selectOptions(status, "Gennemført");
+    expect(progress).toHaveValue("100");
+  });
+
   it("bevarer opret-knappen når kun fulgte projekter vises", async () => {
     const user = userEvent.setup();
     render(
@@ -96,7 +113,7 @@ describe("ProjectsPage", () => {
       />,
     );
     expect(
-      screen.getByText("Projekter fra dem, du følger"),
+      screen.getByText("Mine forbindelser"),
     ).toBeInTheDocument();
     await user.click(
       screen.getByRole("button", { name: "Opret dit første projekt" }),
@@ -104,6 +121,33 @@ describe("ProjectsPage", () => {
     expect(
       screen.getAllByRole("dialog", { name: "Opret projekt" }),
     ).not.toHaveLength(0);
+  });
+
+  it("viser forbindelser og aktive linjer over det valgte projekt", () => {
+    const { container } = render(
+      <ProjectsPage
+        initialProjects={[project]}
+        connectionProjects={[
+          {
+            ...project,
+            id: "connection-project",
+            visible: true,
+            owner: {
+              id: "other",
+              name: "Anden Klatrer",
+              username: "anden",
+              initials: "AK",
+            },
+          },
+        ]}
+      />,
+    );
+
+    expect(
+      Array.from(container.querySelectorAll("[data-projects-section]")).map(
+        (section) => section.getAttribute("data-projects-section"),
+      ),
+    ).toEqual(["connections", "active-lines", "selected-project"]);
   });
 
   it("viser projektbilledet og opdaterer fremskridt, status og note", async () => {

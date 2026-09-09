@@ -64,6 +64,9 @@ export async function POST(request: Request) {
       { error: "Vælg gyldigt fremskridt og status." },
       { status: 400 },
     );
+  const normalizedProgress = status === "Gennemført" ? 100 : progress;
+  const normalizedStatus =
+    normalizedProgress === 100 ? "Gennemført" : (status as ProjectStatus);
   let image: string | undefined;
   if (imageFile instanceof File && imageFile.size > 0) {
     if (!imageFile.type.startsWith("image/"))
@@ -106,8 +109,8 @@ export async function POST(request: Request) {
         note: typeof note === "string" ? note : "",
         image,
         visible,
-        progress,
-        status: status as ProjectStatus,
+        progress: normalizedProgress,
+        status: normalizedStatus,
       }),
     },
     { status: 201 },
@@ -143,6 +146,9 @@ export async function PATCH(request: Request) {
         { error: "Vælg gyldigt fremskridt og status." },
         { status: 400 },
       );
+    const normalizedProgress = status === "Gennemført" ? 100 : progress;
+    const normalizedStatus =
+      normalizedProgress === 100 ? "Gennemført" : (status as ProjectStatus);
     let image: string | undefined;
     if (imageFile instanceof File && imageFile.size > 0) {
       if (
@@ -173,8 +179,8 @@ export async function PATCH(request: Request) {
       image = `/api/uploads/projects/${filename}`;
     }
     const project = await updateUserProject(user.id, id, {
-      progress,
-      status: status as ProjectStatus,
+      progress: normalizedProgress,
+      status: normalizedStatus,
       note: typeof note === "string" ? note : "",
       image,
       ...(body.get("attempt") === "true" ? { attempt: true } : {}),

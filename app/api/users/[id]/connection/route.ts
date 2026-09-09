@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { SESSION_COOKIE, userFromSession } from "@/lib/auth";
-import { acceptConnection, rejectConnection, removeConnection, requestConnection } from "@/lib/social";
+import { acceptConnection, getMailRecipients, rejectConnection, removeConnection, requestConnection } from "@/lib/social";
+import { requestConnectionRequestEmail } from "@/lib/mail-service";
 
 async function currentUser() { return userFromSession(cookies().get(SESSION_COOKIE)?.value); }
 
@@ -10,6 +11,11 @@ export async function POST(_: Request, { params }: { params: { id: string } }) {
   if (!user) return NextResponse.json({ error: "Du skal være logget ind." }, { status: 401 });
   try {
     await requestConnection(user.id, params.id);
+    const recipient = (await getMailRecipients([params.id]))[0];
+    if (recipient) await requestConnectionRequestEmail({
+      eventId: `connection-request-${user.id}-${recipient.id}`, userId: recipient.id, recipient: recipient.email,
+      data: { recipientName: recipient.name, senderName: user.name, connectionsUrl: `${process.env.APP_URL || "http://localhost:3000"}/klatrere` }
+    }).catch(error => console.error("Mailservicen kunne ikke modtage forbindelsesanmodningen:", error));
     return NextResponse.json({ connectionStatus: "outgoing" }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Kunne ikke sende forbindelsesanmodningen." }, { status: 400 });

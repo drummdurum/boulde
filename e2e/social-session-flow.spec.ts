@@ -60,17 +60,29 @@ test("forbindelse, invitationspolitik og direkte sessioninvitation virker samlet
     expect(allowResponse.ok()).toBe(true);
     const created = await hostContext.request.post("/api/sessions", { data: sessionInput });
     expect(created.status()).toBe(201);
+    const createdBody = await created.json();
 
-    await inviteePage.goto("/sessioner");
-    const card = inviteePage.getByRole("article").filter({ hasText: sessionInput.title });
+    await inviteeContext.request.post("/api/auth/logout");
+    await inviteePage.goto("/login");
+    await inviteePage.getByLabel("E-mail").fill(invitee.email);
+    await inviteePage.getByLabel("Adgangskode").fill(invitee.password);
+    await inviteePage.getByRole("button", { name: "Log ind" }).click();
+    await expect(inviteePage).toHaveURL("/");
+
+    const invitations = inviteePage.getByRole("region", { name: "Sessioninvitationer" });
+    const card = invitations.getByRole("article").filter({ hasText: sessionInput.title });
     await expect(card.getByText(`Inviteret af ${host.name}`)).toBeVisible();
     await card.getByRole("button", { name: "Acceptér" }).click();
-    await expect(card.getByText("2 med")).toBeVisible();
+    await expect(card).not.toBeVisible();
+
+    await inviteePage.goto(`/session/${createdBody.session.shareId}`);
+    await expect(inviteePage.getByRole("heading", { name: "2 deltagere" })).toBeVisible();
+    await expect(inviteePage.getByText(invitee.name, { exact: true })).toBeVisible();
 
     const sessionsResponse = await inviteeContext.request.get("/api/sessions");
     const sessionsBody = await sessionsResponse.json();
     const received = sessionsBody.sessions.find((session: { title: string }) => session.title === sessionInput.title);
-    expect(received).toMatchObject({ viewerRole: "invitee", invitationStatus: "accepted" });
+    expect(received).toMatchObject({ viewerRole: "invitee", invitationStatus: "accepted", invitationReadAt: expect.any(String) });
     expect(received.participants.map((person: { name: string }) => person.name)).toEqual(expect.arrayContaining([host.name, invitee.name]));
   } finally {
     await hostContext.close();

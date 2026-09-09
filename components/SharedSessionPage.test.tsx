@@ -1,4 +1,5 @@
-import { act, fireEvent, render } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ClimbingSession } from "@/types";
 import { SharedSessionPage } from "./SharedSessionPage";
@@ -12,7 +13,7 @@ const session: ClimbingSession = {
 const hiddenDescriptor = Object.getOwnPropertyDescriptor(document, "hidden");
 
 describe("SharedSessionPage polling", () => {
-  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); if (hiddenDescriptor) Object.defineProperty(document, "hidden", hiddenDescriptor); });
+  afterEach(() => { cleanup(); vi.useRealTimers(); vi.unstubAllGlobals(); if (hiddenDescriptor) Object.defineProperty(document, "hidden", hiddenDescriptor); });
 
   it("pauser i en skjult fane og opdaterer straks, når fanen bliver synlig", async () => {
     vi.useFakeTimers();
@@ -33,5 +34,21 @@ describe("SharedSessionPage polling", () => {
     hidden = false;
     await act(async () => { fireEvent(document, new Event("visibilitychange")); await Promise.resolve(); });
     expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("lader værten invitere en forbindelse fra sessionsiden", async () => {
+    const hostSession = { ...session, viewerRole: "host" as const };
+    const fetchMock = vi.fn().mockImplementation(async (_url: string, options?: RequestInit) => options?.method === "POST"
+      ? { ok: true, json: async () => ({ invited: 1 }) }
+      : { ok: true, json: async () => ({ session: hostSession }) });
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SharedSessionPage initialSession={hostSession} connections={[{ id: "friend-1", name: "Freja Friend", username: "freja", initials: "FF" }]} />);
+
+    await userEvent.click(screen.getByRole("checkbox", { name: /Freja Friend/ }));
+    await userEvent.click(screen.getByRole("button", { name: "Send invitation" }));
+
+    expect(fetchMock).toHaveBeenCalledWith("/api/sessions/share-1/invitation", expect.objectContaining({ method: "POST", body: JSON.stringify({ inviteeIds: ["friend-1"] }) }));
+    expect(await screen.findByText("1 invitation sendt.")).toBeInTheDocument();
+    expect(screen.queryByText("Vil du med?")).not.toBeInTheDocument();
   });
 });

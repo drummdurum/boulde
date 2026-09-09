@@ -58,6 +58,22 @@ describe("POST /api/projects", () => {
       expect.objectContaining({ progress: 35, status: "Arbejder på den" }),
     );
   });
+
+  it("sætter status til gennemført ved 100 procent", async () => {
+    mocks.placeById.mockReturnValue({ id: "place-1", name: "Hallen" });
+    mocks.createUserProject.mockResolvedValue({ id: "project-1" });
+    const form = new FormData();
+    form.set("name", "Projektet");
+    form.set("placeId", "place-1");
+    form.set("grade", "6B");
+    form.set("progress", "100");
+    form.set("status", "Tæt på");
+    await POST(new Request("http://localhost/api/projects", { method: "POST", body: form }));
+    expect(mocks.createUserProject).toHaveBeenCalledWith(
+      "user-1",
+      expect.objectContaining({ progress: 100, status: "Gennemført" }),
+    );
+  });
 });
 
 describe("PATCH /api/projects", () => {
@@ -106,5 +122,19 @@ describe("PATCH /api/projects", () => {
     );
     expect(response.status).toBe(400);
     expect(mocks.updateUserProject).not.toHaveBeenCalled();
+  });
+
+  it("sætter fremskridt til 100 ved status gennemført", async () => {
+    mocks.updateUserProject.mockResolvedValue({ id: "project-1" });
+    const form = new FormData();
+    form.set("id", "project-1");
+    form.set("progress", "70");
+    form.set("status", "Gennemført");
+    await PATCH(new Request("http://localhost/api/projects", { method: "PATCH", body: form }));
+    expect(mocks.updateUserProject).toHaveBeenCalledWith(
+      "user-1",
+      "project-1",
+      expect.objectContaining({ progress: 100, status: "Gennemført" }),
+    );
   });
 });

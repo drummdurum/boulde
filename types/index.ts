@@ -44,6 +44,7 @@ export interface ClimbingSession {
   participants: Array<{ id: string; name: string; initials: string }>;
   viewerRole?: "host" | "invitee";
   invitationStatus?: "pending" | "accepted" | "declined";
+  invitationReadAt?: string;
   createdAt: string;
 }
 

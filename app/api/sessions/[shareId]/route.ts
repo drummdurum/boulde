@@ -1,9 +1,12 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSharedSession, joinSharedSession } from "@/lib/user-data";
+import { SESSION_COOKIE, userFromSession } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 export async function GET(_: Request, { params }: { params: { shareId: string } }) {
-  const session = await getSharedSession(params.shareId);
+  const user = await userFromSession(cookies().get(SESSION_COOKIE)?.value);
+  const session = await getSharedSession(params.shareId, user?.id);
   return session ? NextResponse.json({ session }, { headers: { "Cache-Control": "no-store" } }) : NextResponse.json({ error: "Sessionen blev ikke fundet." }, { status: 404 });
 }
 export async function POST(request: Request, { params }: { params: { shareId: string } }) {

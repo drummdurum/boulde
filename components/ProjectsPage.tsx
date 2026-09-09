@@ -197,8 +197,14 @@ export function ProjectsPage({
             </button>
           ))}
         </div>
-        {connectionProjects.length > 0 && <ConnectionProjects projects={connectionProjects} />}
-        <section aria-labelledby="project-picker-title" className="mb-7">
+        {connectionProjects.length > 0 && (
+          <ConnectionProjects projects={connectionProjects} />
+        )}
+        <section
+          aria-labelledby="project-picker-title"
+          className="mb-7"
+          data-projects-section="active-lines"
+        >
           <div className="mb-3 flex items-end justify-between">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">
@@ -234,54 +240,14 @@ export function ProjectsPage({
             )}
           </div>
         </section>
-        <div ref={detailRef} className="scroll-mt-5">
+        <div
+          ref={detailRef}
+          className="scroll-mt-5"
+          data-projects-section="selected-project"
+        >
           <VisibilityControl project={selected} onChange={() => changeVisibility(selected)} />
           <ProjectDetail project={selected} onLog={() => setLogOpen(true)} onEdit={() => setEditOpen(true)} mediaVersion={mediaVersion} />
         </div>
-        {connectionProjects.length > 0 && (
-          <section
-            className="hidden"
-            aria-labelledby="connection-projects-title"
-          >
-            <p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">
-              Fra dit netværk
-            </p>
-            <h2
-              id="connection-projects-title"
-              className="mt-1 text-2xl font-extrabold"
-            >
-              Synlige projekter
-            </h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {connectionProjects.map((project) => (
-                <article
-                  key={project.id}
-                  className="rounded-[22px] border border-line bg-limestone p-5 shadow-soft"
-                >
-                  <div className="flex items-center gap-2 text-xs font-extrabold text-muted">
-                    <Users size={15} />
-                    {project.owner?.name} · @{project.owner?.username}
-                  </div>
-                  <h3 className="mt-3 text-lg font-extrabold">
-                    {project.name}
-                  </h3>
-                  <p className="mt-1 text-sm font-semibold text-muted">
-                    {project.location} · {project.grade}
-                  </p>
-                  <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-sand">
-                    <div
-                      className="h-full rounded-full bg-ochre"
-                      style={{ width: `${project.progress}%` }}
-                    />
-                  </div>
-                  <p className="mt-2 text-xs font-bold text-muted">
-                    {project.status} · {project.progress}%
-                  </p>
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
       </div>
       <CreateProjectModal
         places={availablePlaces}
@@ -313,17 +279,18 @@ export function ProjectsPage({
 function ConnectionProjects({ projects }: { projects: ClimbingProject[] }) {
   return (
     <section
-      className="mt-10"
-      aria-labelledby="connection-projects-empty-title"
+      className="mb-7"
+      aria-labelledby="connection-projects-title"
+      data-projects-section="connections"
     >
       <p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">
         Fra dit netværk
       </p>
       <h2
-        id="connection-projects-empty-title"
+        id="connection-projects-title"
         className="mt-1 text-2xl font-extrabold"
       >
-        Projekter fra dem, du følger
+        Mine forbindelser
       </h2>
       <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {projects.map((project) => (
@@ -369,6 +336,7 @@ function CreateProjectModal({
   const [error, setError] = useState("");
   const [imageFile, setImageFile] = useState<File>();
   const [progress, setProgress] = useState(0);
+  const [status, setStatus] = useState<ProjectStatus>("Ny");
   const imagePreview = useMemo(
     () => (imageFile ? URL.createObjectURL(imageFile) : ""),
     [imageFile],
@@ -383,6 +351,7 @@ function CreateProjectModal({
     if (!open) {
       setImageFile(undefined);
       setProgress(0);
+      setStatus("Ny");
       setError("");
     }
   }, [open]);
@@ -564,14 +533,28 @@ function CreateProjectModal({
               max="100"
               step="5"
               value={progress}
-              onChange={(event) => setProgress(Number(event.target.value))}
+              onChange={(event) => {
+                const nextProgress = Number(event.target.value);
+                setProgress(nextProgress);
+                if (nextProgress === 100) setStatus("Gennemført");
+                else if (status === "Gennemført") setStatus("Tæt på");
+              }}
               className="mt-3 w-full accent-clay"
               aria-label="Fremskridt i procent"
             />
           </label>
           <label className="block text-sm font-extrabold">
             Status
-            <select name="status" defaultValue="Ny" onChange={(event) => { if (event.target.value === "Gennemført") setProgress(100); }} className={inputClass}>
+            <select
+              name="status"
+              value={status}
+              onChange={(event) => {
+                const nextStatus = event.target.value as ProjectStatus;
+                setStatus(nextStatus);
+                if (nextStatus === "Gennemført") setProgress(100);
+              }}
+              className={inputClass}
+            >
               {filters.slice(1).map((status) => (
                 <option key={status}>{status}</option>
               ))}
@@ -614,6 +597,7 @@ function EditProjectModal({
 }) {
   const [imageFile, setImageFile] = useState<File>();
   const [progress, setProgress] = useState(project.progress);
+  const [status, setStatus] = useState<ProjectStatus>(project.status);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const preview = useMemo(
@@ -726,7 +710,12 @@ function EditProjectModal({
               max="100"
               step="5"
               value={progress}
-              onChange={(event) => setProgress(Number(event.target.value))}
+              onChange={(event) => {
+                const nextProgress = Number(event.target.value);
+                setProgress(nextProgress);
+                if (nextProgress === 100) setStatus("Gennemført");
+                else if (status === "Gennemført") setStatus("Tæt på");
+              }}
               className="mt-3 w-full accent-clay"
               aria-label="Fremskridt i procent"
             />
@@ -735,8 +724,12 @@ function EditProjectModal({
             Status
             <select
               name="status"
-              defaultValue={project.status}
-              onChange={(event) => { if (event.target.value === "Gennemført") setProgress(100); }}
+              value={status}
+              onChange={(event) => {
+                const nextStatus = event.target.value as ProjectStatus;
+                setStatus(nextStatus);
+                if (nextStatus === "Gennemført") setProgress(100);
+              }}
               className="mt-2 h-11 w-full rounded-2xl border border-line bg-sand px-4 font-normal"
             >
               {filters.slice(1).map((status) => (
