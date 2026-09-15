@@ -39,7 +39,7 @@ export interface ClimbingLocation {
 }
 export interface ClimbingSession {
   id: string; shareId: string; title: string; date: string; time: string; location: string;
-  project?: Pick<ClimbingProject, "id" | "name" | "grade">;
+  project?: Pick<ClimbingProject, "id" | "name" | "grade" | "visible">;
   host: Pick<User, "id" | "name" | "initials">;
   participants: Array<{ id: string; name: string; initials: string }>;
   viewerRole?: "host" | "invitee";

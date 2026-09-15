@@ -51,4 +51,10 @@ describe("SharedSessionPage polling", () => {
     expect(await screen.findByText("1 invitation sendt.")).toBeInTheDocument();
     expect(screen.queryByText("Vil du med?")).not.toBeInTheDocument();
   });
+
+  it("lader deltagere åbne et synligt projekt fra sessionen", () => {
+    render(<SharedSessionPage initialSession={{ ...session, project: { id: "project-1", name: "Cruxet", grade: "7A", visible: true } }} />);
+
+    expect(screen.getByRole("link", { name: /Offentligt projekt · åbn.*Cruxet · 7A/i })).toHaveAttribute("href", "/projekter/project-1");
+  });
 });

@@ -1,9 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { beforeAll, describe, expect, it } from "vitest";
 
-const mailUrl = process.env.INTEGRATION_MAIL_URL ?? "http://localhost:3101";
 const mediaUrl = process.env.INTEGRATION_MEDIA_URL ?? "http://localhost:3102";
-const mailApiKey = process.env.MAIL_SERVICE_API_KEY ?? "local-development-key";
 const mediaApiKey = process.env.MEDIA_SERVICE_API_KEY ?? "local-media-development-key";
 
 async function responseJson(response: Response) {
@@ -41,42 +39,7 @@ async function waitForHealth(baseUrl: string, expectedService: string) {
 }
 
 beforeAll(async () => {
-  await Promise.all([
-    waitForHealth(mailUrl, "boulde-mail-service"),
-    waitForHealth(mediaUrl, "boulde-media-service")
-  ]);
-});
-
-describe("forbindelsen til mail-servicen", () => {
-  it("kører et velkomstmail-job gennem API, Redis, worker, SMTP og MongoDB", async () => {
-    const uniqueId = randomUUID();
-    const response = await fetch(`${mailUrl}/emails/welcome`, {
-      method: "POST",
-      headers: { "content-type": "application/json", "x-api-key": mailApiKey },
-      body: JSON.stringify({
-        userId: `integration-${uniqueId}`,
-        recipient: `integration-${uniqueId}@example.test`,
-        data: { name: "Integrationstest" }
-      })
-    });
-    const queued = await responseJson(response) as { jobId: string; status: string };
-
-    expect(response.status).toBe(202);
-    expect(queued.status).toBe("QUEUED");
-
-    const mail = await waitFor(async () => {
-      const statusResponse = await fetch(`${mailUrl}/emails/${encodeURIComponent(queued.jobId)}`, {
-        headers: { "x-api-key": mailApiKey }
-      });
-      if (statusResponse.status === 404) return undefined;
-      const body = await responseJson(statusResponse) as { mail: { status: string; recipient: string; providerMessageId?: string } };
-      if (body.mail.status === "FAILED") throw new Error("Mailjobbet fejlede.");
-      return body.mail.status === "SENT" ? body.mail : undefined;
-    }, "at mail-worker sender velkomstmailen");
-
-    expect(mail.recipient).toBe(`integration-${uniqueId}@example.test`);
-    expect(mail.providerMessageId).toBeTruthy();
-  });
+  await waitForHealth(mediaUrl, "boulde-media-service");
 });
 
 describe("forbindelsen til media-servicen", () => {

@@ -379,7 +379,7 @@ function publicSession(
     createdAt: session.createdAt.toString(),
     ...(project
       ? {
-          project: { id: project.id, name: project.name, grade: project.grade },
+          project: { id: project.id, name: project.name, grade: project.grade, visible: project.visible === true },
         }
       : {}),
     host: { id: host.id, name: host.name, initials: initials(host.name) },

@@ -1,11 +1,13 @@
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ClimbingSession, SessionInvitee } from "@/types";
+import type { ClimbingLocation, ClimbingProject, ClimbingSession, SessionInvitee } from "@/types";
 import { SessionsPage } from "./SessionsPage";
 
 const host = { id: "host", name: "Helle Host", initials: "HH" };
 const connection: SessionInvitee = { id: "friend", name: "Freja Friend", username: "freja", initials: "FF" };
+const location: ClimbingLocation = { id: "sydhavn", name: "Boulders Sydhavn", region: "Hovedstaden", address: "Testvej 1", hours: "10-22", hoursNote: "", status: "open", type: "Bouldering", chain: "Boulders", country: "Danmark", imageUrl: "/test.jpg", mapsUrl: "https://maps.example" };
+const project = (overrides: Partial<ClimbingProject>): ClimbingProject => ({ id: "project-1", name: "Det aktive projekt", location: "Boulders Sydhavn", grade: "6B", attempts: 1, lastAttempt: "I går", note: "", status: "Arbejder på den", progress: 40, visible: true, ...overrides });
 const pendingSession: ClimbingSession = {
   id: "session-1",
   shareId: "share-1",
@@ -21,20 +23,20 @@ const pendingSession: ClimbingSession = {
 };
 
 describe("SessionsPage invitationer", () => {
-  afterEach(() => { vi.unstubAllGlobals(); });
+  afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
 
   it("sender de valgte forbindelsers id'er, når en session oprettes", async () => {
     const createdSession = { ...pendingSession, id: "created", shareId: "created-share", viewerRole: "host" as const, invitationStatus: undefined };
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ session: createdSession }) });
     vi.stubGlobal("fetch", fetchMock);
     const user = userEvent.setup();
-    render(<SessionsPage initialSessions={[]} projects={[]} connections={[connection]} />);
+    render(<SessionsPage initialSessions={[]} projects={[]} connections={[connection]} locations={[location]} />);
 
     await user.click(screen.getByRole("button", { name: "Ny session" }));
     await user.type(screen.getByLabelText("Titel"), "Aftenbouldering");
     await user.type(screen.getByLabelText("Dato"), "2099-06-12");
     await user.type(screen.getByLabelText("Tid"), "18:30");
-    await user.type(screen.getByLabelText("Sted"), "Boulders Sydhavn");
+    await user.selectOptions(screen.getByLabelText("Sted"), "sydhavn");
     await user.click(screen.getByRole("checkbox", { name: /Freja Friend/ }));
     await user.click(screen.getByRole("button", { name: "Opret session og invitér" }));
 
@@ -45,7 +47,7 @@ describe("SessionsPage invitationer", () => {
       title: "Aftenbouldering",
       date: "2099-06-12",
       time: "18:30",
-      location: "Boulders Sydhavn",
+      locationId: "sydhavn",
       inviteeIds: ["friend"],
     });
     expect(await screen.findByRole("heading", { name: "Aftenbouldering" })).toBeInTheDocument();
@@ -55,7 +57,7 @@ describe("SessionsPage invitationer", () => {
     const accepted = { ...pendingSession, invitationStatus: "accepted" as const, participants: [...pendingSession.participants, { id: "viewer", name: "Viggo Viewer", initials: "VV" }] };
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ session: accepted }) });
     vi.stubGlobal("fetch", fetchMock);
-    render(<SessionsPage initialSessions={[pendingSession]} projects={[]} connections={[]} />);
+    render(<SessionsPage initialSessions={[pendingSession]} projects={[]} connections={[]} locations={[location]} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Acceptér" }));
 
@@ -64,11 +66,26 @@ describe("SessionsPage invitationer", () => {
     expect(screen.queryByRole("button", { name: "Acceptér" })).not.toBeInTheDocument();
   });
 
+  it("viser kun ikke-gennemførte projekter fra det valgte klatrested", async () => {
+    render(<SessionsPage initialSessions={[]} projects={[
+      project({}),
+      project({ id: "completed", name: "Allerede færdig", status: "Gennemført" }),
+      project({ id: "elsewhere", name: "Et andet sted", location: "Boulders Aarhus" }),
+    ]} connections={[]} locations={[location]} />);
+
+    await userEvent.click(screen.getByRole("button", { name: "Opret session" }));
+    await userEvent.selectOptions(screen.getByLabelText("Sted"), "sydhavn");
+
+    expect(screen.getByRole("option", { name: "Det aktive projekt · 6B" })).toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Allerede færdig/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("option", { name: /Et andet sted/ })).not.toBeInTheDocument();
+  });
+
   it("viser afslået status efter afslag på en afventende invitation", async () => {
     const declined = { ...pendingSession, invitationStatus: "declined" as const };
     const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ session: declined }) });
     vi.stubGlobal("fetch", fetchMock);
-    render(<SessionsPage initialSessions={[pendingSession]} projects={[]} connections={[]} />);
+    render(<SessionsPage initialSessions={[pendingSession]} projects={[]} connections={[]} locations={[location]} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Afslå" }));
 
@@ -78,7 +95,7 @@ describe("SessionsPage invitationer", () => {
   });
 
   it("viser stadig oprettelsesflowet uden forbindelser", async () => {
-    render(<SessionsPage initialSessions={[]} projects={[]} connections={[]} />);
+    render(<SessionsPage initialSessions={[]} projects={[]} connections={[]} locations={[location]} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Opret session" }));
 

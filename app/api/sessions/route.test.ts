@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => ({
   getConnectedUsers: vi.fn(),
   getMailRecipients: vi.fn(),
   canInviteUser: vi.fn(),
+  getClimbingLocation: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({ cookies: () => ({ get: () => ({ value: "session" }) }) }));
@@ -19,10 +20,11 @@ vi.mock("@/lib/user-data", () => ({
 vi.mock("@/lib/social", () => ({ getConnectedUsers: mocks.getConnectedUsers, getMailRecipients: mocks.getMailRecipients }));
 vi.mock("@/lib/mail-service", () => ({ requestSessionInvitationEmail: vi.fn() }));
 vi.mock("@/lib/preferences", () => ({ canInviteUser: mocks.canInviteUser }));
+vi.mock("@/lib/locations", () => ({ getClimbingLocation: mocks.getClimbingLocation }));
 
 import { POST } from "./route";
 
-const validInput = { title: "Aftenbouldering", date: "2099-06-12", time: "18:30", location: "Hallen" };
+const validInput = { title: "Aftenbouldering", date: "2099-06-12", time: "18:30", locationId: "hallen" };
 function request(body: unknown) {
   return new Request("http://localhost/api/sessions", {
     method: "POST",
@@ -38,13 +40,25 @@ describe("POST /api/sessions", () => {
     mocks.getConnectedUsers.mockResolvedValue([{ id: "connection-1" }]);
     mocks.getMailRecipients.mockResolvedValue([]);
     mocks.canInviteUser.mockResolvedValue(true);
-    mocks.createClimbingSession.mockResolvedValue({ id: "session-1", ...validInput });
+    mocks.getClimbingLocation.mockResolvedValue({ id: "hallen", name: "Hallen" });
+    mocks.createClimbingSession.mockResolvedValue({ id: "session-1", ...validInput, location: "Hallen" });
   });
 
   it("opretter en session og sender kun accepterede forbindelser videre", async () => {
     const response = await POST(request({ ...validInput, inviteeIds: ["connection-1", "connection-1"] }));
     expect(response.status).toBe(201);
-    expect(mocks.createClimbingSession).toHaveBeenCalledWith("host-1", expect.objectContaining({ inviteeIds: ["connection-1"] }));
+    expect(mocks.createClimbingSession).toHaveBeenCalledWith("host-1", expect.objectContaining({ location: "Hallen", inviteeIds: ["connection-1"] }));
+  });
+
+  it("afviser gennemførte projekter og projekter fra en anden hal", async () => {
+    mocks.getUserProjects.mockResolvedValueOnce([{ id: "project-1", status: "Gennemført", location: "Hallen" }]);
+    const completed = await POST(request({ ...validInput, projectId: "project-1" }));
+    expect(completed.status).toBe(400);
+
+    mocks.getUserProjects.mockResolvedValueOnce([{ id: "project-2", status: "Arbejder på den", location: "En anden hal" }]);
+    const elsewhere = await POST(request({ ...validInput, projectId: "project-2" }));
+    expect(elsewhere.status).toBe(400);
+    expect(mocks.createClimbingSession).not.toHaveBeenCalled();
   });
 
   it("afviser en følger, som ikke er en accepteret forbindelse", async () => {
