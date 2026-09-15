@@ -59,6 +59,25 @@ describe("POST /api/projects", () => {
     );
   });
 
+  it("kan oprette uden billede når den globale File-constructor mangler", async () => {
+    vi.stubGlobal("File", undefined);
+    mocks.placeById.mockReturnValue({ id: "place-1", name: "Hallen" });
+    mocks.createUserProject.mockResolvedValue({ id: "project-1" });
+    const form = new FormData();
+    form.set("name", "Projektet");
+    form.set("placeId", "place-1");
+    form.set("grade", "6B");
+    form.set("progress", "0");
+    form.set("status", "Ny");
+
+    const response = await POST(
+      new Request("http://localhost/api/projects", { method: "POST", body: form }),
+    );
+
+    expect(response.status).toBe(201);
+    vi.unstubAllGlobals();
+  });
+
   it("sætter status til gennemført ved 100 procent", async () => {
     mocks.placeById.mockReturnValue({ id: "place-1", name: "Hallen" });
     mocks.createUserProject.mockResolvedValue({ id: "project-1" });

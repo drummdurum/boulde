@@ -68,7 +68,7 @@ export async function POST(request: Request) {
   const normalizedStatus =
     normalizedProgress === 100 ? "Gennemført" : (status as ProjectStatus);
   let image: string | undefined;
-  if (imageFile instanceof File && imageFile.size > 0) {
+  if (imageFile instanceof Blob && imageFile.size > 0) {
     if (!imageFile.type.startsWith("image/"))
       return NextResponse.json(
         { error: "Vælg en gyldig billedfil." },
@@ -150,7 +150,7 @@ export async function PATCH(request: Request) {
     const normalizedStatus =
       normalizedProgress === 100 ? "Gennemført" : (status as ProjectStatus);
     let image: string | undefined;
-    if (imageFile instanceof File && imageFile.size > 0) {
+    if (imageFile instanceof Blob && imageFile.size > 0) {
       if (
         !imageFile.type.startsWith("image/") ||
         imageFile.size > 8 * 1024 * 1024

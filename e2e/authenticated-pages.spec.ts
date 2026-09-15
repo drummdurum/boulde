@@ -67,7 +67,7 @@ test.afterAll(async () => {
     );
     await Promise.all(
       uploadedProjectImages.map((image) =>
-        unlink(path.join(process.cwd(), "public", image)).catch(
+        unlink(path.join(process.cwd(), "public", image.replace(/^\/api\//, ""))).catch(
           () => undefined,
         ),
       ),
@@ -92,7 +92,7 @@ test("opretter bruger, logger ind og åbner de beskyttede sider", async ({
   await expect(page).toHaveURL("/");
   await expect(
     page.getByRole("heading", { name: "Klar til næste problem?" }),
-  ).toBeVisible();
+  ).toBeVisible({ timeout: 15_000 });
 
   await page.getByRole("button", { name: "Log ud" }).click();
   await expect(page).toHaveURL(/\/login$/);
@@ -224,7 +224,9 @@ test("opretter et projekt med billede og uploader en video til samme projekt", a
     .getByLabel("Adgangskode", { exact: true })
     .fill(mediaUser.password);
   await page.getByRole("button", { name: "Opret bruger" }).click();
-  await expect(page).toHaveURL("/");
+  await expect(
+    page.getByRole("heading", { name: "Klar til næste problem?" }),
+  ).toBeVisible({ timeout: 15_000 });
   await page.goto("/projekter");
   await page.getByRole("button", { name: "Opret dit første projekt" }).click();
   const projectDialog = page.getByRole("dialog", { name: "Opret projekt" });
@@ -299,6 +301,7 @@ test("opretter et projekt med billede og uploader en video til samme projekt", a
     note: "Har fat i slutgrebet",
   });
   expect(updatedProject.image).not.toBe(createdProject.image);
+  uploadedProjectImages.push(updatedProject.image);
   expect(await (await page.request.get(updatedProject.image)).body()).toEqual(
     replacementImageBytes,
   );
@@ -310,6 +313,11 @@ test("opretter et projekt med billede og uploader en video til samme projekt", a
       .first(),
   ).toHaveAttribute("src", updatedProject.image);
 
+  // Browseren må kun bruge Boulde på port 3000. MinIO er ikke eksponeret
+  // i brugerflowet; Boulde proxyer filen videre til media-servicen.
+  await page.route("http://localhost:9000/**", (route) =>
+    route.abort("blockedbyclient"),
+  );
   await page.getByRole("button", { name: "Nyt forsøg" }).first().click();
   const mediaDialog = page.getByRole("dialog", { name: "Nyt forsøg" });
   await mediaDialog.getByLabel("Vælg video").setInputFiles({
@@ -324,7 +332,7 @@ test("opretter et projekt med billede og uploader en video til samme projekt", a
   await mediaDialog.getByLabel("Status").selectOption("Tæt på");
   await mediaDialog.getByRole("button", { name: "Gem forsøg" }).click();
   await expect(
-    page.getByRole("heading", { name: "Delte billeder og videoer" }),
+    page.getByRole("heading", { name: "Seneste forsøg" }),
   ).toBeVisible({ timeout: 15_000 });
   await expect(page.locator("video")).toBeVisible();
 

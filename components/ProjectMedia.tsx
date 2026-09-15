@@ -102,35 +102,15 @@ export function MediaUploadModal({
     setError("");
     try {
       for (const file of files) {
-        const prepare = await fetch(`/api/projects/${project.id}/media`, {
+        const mediaUpload = new FormData();
+        mediaUpload.set("file", file);
+        mediaUpload.set("note", note);
+        const upload = await fetch(`/api/projects/${project.id}/media`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "prepare",
-            contentType: file.type,
-            size: file.size,
-            note,
-          }),
+          body: mediaUpload,
         });
-        const prepared = await prepare.json();
-        if (!prepare.ok) throw new Error(prepared.error);
-        const upload = await fetch(prepared.uploadUrl, {
-          method: "PUT",
-          headers: { "Content-Type": file.type },
-          body: file,
-        });
-        if (!upload.ok) throw new Error("Filen kunne ikke uploades.");
-        const complete = await fetch(`/api/projects/${project.id}/media`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "complete",
-            mediaId: prepared.mediaId,
-            size: file.size,
-          }),
-        });
-        const completed = await complete.json();
-        if (!complete.ok) throw new Error(completed.error);
+        const uploaded = await upload.json();
+        if (!upload.ok) throw new Error(uploaded.error || "Filen kunne ikke uploades.");
       }
       const values = new FormData();
       values.set("id", project.id);

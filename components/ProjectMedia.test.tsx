@@ -20,17 +20,9 @@ describe("MediaUploadModal", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
-  it("uploader en video direkte og bekræfter metadata bagefter", async () => {
+  it("uploader en video gennem Boulde API'et på samme origin", async () => {
     const fetchMock = vi
       .fn()
-      .mockResolvedValueOnce({
-        ok: true,
-        json: async () => ({
-          key: "projects/project-media/video.mp4",
-          uploadUrl: "https://storage.test/upload",
-        }),
-      })
-      .mockResolvedValueOnce({ ok: true })
       .mockResolvedValueOnce({
         ok: true,
         json: async () => ({ media: { id: "media-1" } }),
@@ -68,21 +60,18 @@ describe("MediaUploadModal", () => {
     await user.click(screen.getByRole("button", { name: "Gem forsøg" }));
     await waitFor(() => expect(onSaved).toHaveBeenCalled());
     expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      "https://storage.test/upload",
-      expect.objectContaining({ method: "PUT", body: video }),
+      1,
+      "/api/projects/project-media/media",
+      expect.objectContaining({ method: "POST", body: expect.any(FormData) }),
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
-      4,
+      2,
       "/api/projects",
       expect.objectContaining({ method: "PATCH", body: expect.any(FormData) }),
     );
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
-      "/api/projects/project-media/media",
-      expect.objectContaining({
-        body: expect.stringContaining('"action":"complete"'),
-      }),
+    expect(fetchMock).not.toHaveBeenCalledWith(
+      expect.stringMatching(/^https?:\/\//),
+      expect.anything(),
     );
   });
 });

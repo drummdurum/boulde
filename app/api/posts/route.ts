@@ -18,7 +18,7 @@ export async function POST(request: Request) {
   const description = body.get("description"); const mediaFile = body.get("media");
   if (typeof description !== "string" || !description.trim()) return NextResponse.json({ error: "Skriv noget i opslaget." }, { status: 400 });
   let media: string | undefined; let isVideo = false;
-  if (mediaFile instanceof File && mediaFile.size > 0) {
+  if (mediaFile instanceof Blob && mediaFile.size > 0) {
     const extensions: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp", "video/mp4": "mp4", "video/webm": "webm", "video/quicktime": "mov" };
     const extension = extensions[mediaFile.type];
     if (!extension) return NextResponse.json({ error: "Vælg en gyldig billed- eller videofil." }, { status: 400 });

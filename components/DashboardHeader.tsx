@@ -1,4 +1,5 @@
-import { Bell, Plus, Search } from "lucide-react";
+import Link from "next/link";
+import { Bell, MapPinned, Plus, Search } from "lucide-react";
 import type { User } from "@/types";
 import { Avatar } from "./ui/Avatar";
 import { Button } from "./ui/Button";
@@ -10,12 +11,17 @@ export function DashboardHeader({ user, onCreate, notificationCount = 0 }: { use
       <h1 className="text-3xl font-extrabold tracking-[-.04em] text-ink sm:text-4xl">Klar til næste problem?</h1>
       <p className="mt-2 max-w-xl text-sm leading-6 text-muted">Din profil er klar. Her får du overblik over dine projekter, opslag og klatrehistorik.</p>
     </div>
-    <div className="flex items-center gap-2 sm:gap-3">
-      <label className="relative min-w-0 flex-1 xl:w-60">
-        <span className="sr-only">Søg efter klatrere og steder</span>
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
-        <input type="search" placeholder="Søg i Boulde" className="h-11 w-full rounded-full border border-line bg-limestone pl-11 pr-4 text-sm text-ink outline-none transition placeholder:text-muted focus:border-moss focus:ring-2 focus:ring-moss/20" />
-      </label>
+    <div className="flex items-start gap-2 sm:gap-3">
+      <div className="min-w-0 flex-1 xl:w-60">
+        <label className="relative block">
+          <span className="sr-only">Søg efter klatrere og steder</span>
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted" size={18} />
+          <input type="search" placeholder="Søg i Boulde" className="h-11 w-full rounded-full border border-line bg-limestone pl-11 pr-4 text-sm text-ink outline-none transition placeholder:text-muted focus:border-moss focus:ring-2 focus:ring-moss/20" />
+        </label>
+        <Link href="/klatresteder" className="mt-2 flex min-h-10 items-center justify-center gap-2 rounded-full border border-line bg-limestone px-4 text-sm font-extrabold text-pine transition hover:bg-sand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay">
+          <MapPinned size={17} />Klatresteder
+        </Link>
+      </div>
       <Button variant="outline" size="icon" aria-label={`Notifikationer${notificationCount ? ` (${notificationCount})` : ""}`} className="relative shrink-0"><Bell size={19} />{notificationCount > 0 && <span className="absolute -right-1 -top-1 grid min-h-5 min-w-5 place-items-center rounded-full bg-clay px-1 text-[10px] font-extrabold text-white ring-2 ring-limestone">{notificationCount > 9 ? "9+" : notificationCount}</span>}</Button>
       <Avatar user={user} />
       <Button onClick={onCreate} className="hidden shrink-0 sm:inline-flex"><Plus size={18} />Opret opslag</Button>

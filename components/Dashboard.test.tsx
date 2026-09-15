@@ -41,5 +41,6 @@ describe("Dashboard sessioninvitationer", () => {
 
     expect(screen.getByText("Gennemførte klatringer").closest("article")).toHaveTextContent("2");
     expect(screen.getByText("Klatresteder besøgt").closest("article")).toHaveTextContent("2");
+    expect(screen.getByRole("link", { name: "Klatresteder" })).toHaveAttribute("href", "/klatresteder");
   });
 });
