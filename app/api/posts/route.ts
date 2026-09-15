@@ -29,7 +29,8 @@ export async function POST(request: Request) {
       const completed = await completePostMedia(prepared.mediaId, mediaFile.size);
       if (completed.postId !== postId) throw new Error("Mediet tilhører ikke opslaget.");
       media = `/api/posts/${postId}/media/${completed.id}`;
-    } catch {
+    } catch (error) {
+      console.error("Post media upload failed", error);
       return NextResponse.json({ error: "Billedet kunne ikke gemmes i medielageret." }, { status: 503 });
     }
   }
