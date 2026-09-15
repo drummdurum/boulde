@@ -34,6 +34,7 @@ export interface ClimbingSpot {
 }
 export interface ClimbingLocation {
   id: string; name: string; region: string; address: string; hours: string; hoursNote: string;
+  placeSlug?: string;
   status: "open" | "closed"; type: string; chain: string; country: string; imageUrl: string;
   mapsUrl: string; instagramUrl?: string; facebookUrl?: string; email?: string; phone?: string;
 }

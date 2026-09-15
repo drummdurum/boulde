@@ -6,8 +6,8 @@ import { SessionsPage } from "./SessionsPage";
 
 const host = { id: "host", name: "Helle Host", initials: "HH" };
 const connection: SessionInvitee = { id: "friend", name: "Freja Friend", username: "freja", initials: "FF" };
-const location: ClimbingLocation = { id: "sydhavn", name: "Boulders Sydhavn", region: "Hovedstaden", address: "Testvej 1", hours: "10-22", hoursNote: "", status: "open", type: "Bouldering", chain: "Boulders", country: "Danmark", imageUrl: "/test.jpg", mapsUrl: "https://maps.example" };
-const project = (overrides: Partial<ClimbingProject>): ClimbingProject => ({ id: "project-1", name: "Det aktive projekt", location: "Boulders Sydhavn", grade: "6B", attempts: 1, lastAttempt: "I går", note: "", status: "Arbejder på den", progress: 40, visible: true, ...overrides });
+const location: ClimbingLocation = { id: "sydhavn", placeSlug: "boulders-kbh-sydhavn", name: "Boulders Sydhavn", region: "Hovedstaden", address: "Testvej 1", hours: "10-22", hoursNote: "", status: "open", type: "Bouldering", chain: "Boulders", country: "Danmark", imageUrl: "/test.jpg", mapsUrl: "https://maps.example" };
+const project = (overrides: Partial<ClimbingProject>): ClimbingProject => ({ id: "project-1", name: "Det aktive projekt", location: "Boulders KBH Sydhavn", placeSlug: "boulders-kbh-sydhavn", grade: "6B", attempts: 1, lastAttempt: "I går", note: "", status: "Arbejder på den", progress: 40, visible: true, ...overrides });
 const pendingSession: ClimbingSession = {
   id: "session-1",
   shareId: "share-1",
@@ -70,7 +70,7 @@ describe("SessionsPage invitationer", () => {
     render(<SessionsPage initialSessions={[]} projects={[
       project({}),
       project({ id: "completed", name: "Allerede færdig", status: "Gennemført" }),
-      project({ id: "elsewhere", name: "Et andet sted", location: "Boulders Aarhus" }),
+      project({ id: "elsewhere", name: "Et andet sted", location: "Boulders Aarhus", placeSlug: "boulders-aarhus-city" }),
     ]} connections={[]} locations={[location]} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Opret session" }));

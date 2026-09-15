@@ -6,6 +6,7 @@ import { getConnectedUsers, getMailRecipients } from "@/lib/social";
 import { requestSessionInvitationEmail } from "@/lib/mail-service";
 import { canInviteUser } from "@/lib/preferences";
 import { getClimbingLocation } from "@/lib/locations";
+import { isProjectAtLocation } from "@/lib/location-match";
 
 async function currentUser() { return userFromSession(cookies().get(SESSION_COOKIE)?.value); }
 function isValidDate(value: string) {
@@ -32,7 +33,7 @@ export async function POST(request: Request) {
     const project = (await getUserProjects(user.id)).find(project => project.id === body.projectId);
     if (!project) return NextResponse.json({ error: "Projektet blev ikke fundet." }, { status: 404 });
     if (project.status === "Gennemført") return NextResponse.json({ error: "Et gennemført projekt kan ikke vælges til en ny session." }, { status: 400 });
-    if (project.location.trim().toLocaleLowerCase("da") !== location.name.trim().toLocaleLowerCase("da")) return NextResponse.json({ error: "Projektet hører ikke til det valgte klatrested." }, { status: 400 });
+    if (!isProjectAtLocation(project, location)) return NextResponse.json({ error: "Projektet hører ikke til det valgte klatrested." }, { status: 400 });
   }
   if (body.inviteeIds !== undefined && (!Array.isArray(body.inviteeIds) || body.inviteeIds.some((id: unknown) => typeof id !== "string" || !id.trim()))) return NextResponse.json({ error: "Invitationerne er ugyldige." }, { status: 400 });
   const inviteeIds: string[] = Array.isArray(body.inviteeIds) ? Array.from(new Set<string>(body.inviteeIds)) : [];

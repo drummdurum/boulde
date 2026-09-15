@@ -151,9 +151,9 @@ export function SharedSessionPage({
             <p className="text-xs font-extrabold uppercase tracking-[.16em] text-limestone/60">
               {isHost ? "Din session" : "Du er inviteret"}
             </p>
-            <div className="mt-3 flex items-start justify-between gap-4">
-              <div>
-                <h1 className="text-3xl font-extrabold tracking-tight sm:text-4xl">
+            <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
+              <div className="min-w-0 flex-1">
+                <h1 className="break-words text-3xl font-extrabold tracking-tight sm:text-4xl">
                   {session.title}
                 </h1>
                 <p className="mt-2 text-sm font-semibold text-limestone/70">
@@ -164,7 +164,7 @@ export function SharedSessionPage({
                 variant="outline"
                 size="sm"
                 onClick={copy}
-                className="border-limestone/20 bg-limestone/10 text-limestone"
+                className="shrink-0 border-limestone/20 bg-limestone/10 text-limestone"
               >
                 <Copy size={15} />
                 {copied ? "Kopieret" : "Del"}
@@ -354,11 +354,11 @@ function Info({
   return (
     <div className="flex gap-3 rounded-2xl bg-sand p-4">
       <Icon size={19} className="mt-0.5 shrink-0 text-clay" />
-      <div>
+      <div className="min-w-0">
         <p className="text-[10px] font-extrabold uppercase tracking-wider text-muted">
           {label}
         </p>
-        <p className="mt-1 text-sm font-extrabold capitalize">{value}</p>
+        <p className="mt-1 break-words text-sm font-extrabold capitalize">{value}</p>
       </div>
     </div>
   );

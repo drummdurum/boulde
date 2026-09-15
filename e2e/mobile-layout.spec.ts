@@ -1,6 +1,15 @@
 import { expect, test } from "@playwright/test";
 
-const authenticatedPages = ["/", "/profil", "/projekter", "/klatrere"];
+const authenticatedPages = [
+  "/",
+  "/profil",
+  "/projekter",
+  "/klatrere",
+  "/sessioner",
+  "/klatresteder",
+  "/steder",
+  "/indstillinger",
+];
 
 test("de primære moduler passer på en smal telefon", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 568 });

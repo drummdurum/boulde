@@ -19,6 +19,7 @@ import type {
   ClimbingSession,
   SessionInvitee,
 } from "@/types";
+import { isProjectAtLocation } from "@/lib/location-match";
 import { Button } from "./ui/Button";
 
 export function SessionsPage({
@@ -68,8 +69,8 @@ export function SessionsPage({
   return (
     <main className="min-h-screen px-4 pb-28 pt-6 sm:px-6 lg:ml-[238px] lg:px-8 lg:pb-10 xl:px-10">
       <div className="mx-auto max-w-[1100px]">
-        <header className="flex items-end justify-between gap-4">
-          <div>
+        <header className="flex flex-col items-start gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
             <p className="text-xs font-extrabold uppercase tracking-[.16em] text-clay">
               Klatr sammen
             </p>
@@ -81,7 +82,7 @@ export function SessionsPage({
               med.
             </p>
           </div>
-          <Button onClick={() => setOpen(true)}>
+          <Button className="shrink-0" onClick={() => setOpen(true)}>
             <Plus size={18} />
             Ny session
           </Button>
@@ -91,14 +92,14 @@ export function SessionsPage({
             {sessions.map((session) => (
               <article
                 key={session.id}
-                className="rounded-[24px] border border-line bg-limestone p-5 shadow-soft"
+                className="min-w-0 rounded-[24px] border border-line bg-limestone p-5 shadow-soft"
               >
                 <div className="flex items-start justify-between gap-4">
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs font-extrabold uppercase tracking-[.14em] text-clay">
                       {formatDate(session.date)}
                     </p>
-                    <h2 className="mt-1 text-xl font-extrabold text-ink">
+                    <h2 className="mt-1 break-words text-xl font-extrabold text-ink">
                       {session.title}
                     </h2>
                     {session.viewerRole === "invitee" && (
@@ -107,7 +108,7 @@ export function SessionsPage({
                       </p>
                     )}
                   </div>
-                  <span className="rounded-full bg-[#e4eee5] px-3 py-1.5 text-xs font-extrabold text-positive">
+                  <span className="shrink-0 rounded-full bg-[#e4eee5] px-3 py-1.5 text-xs font-extrabold text-positive">
                     {session.participants.length} med
                   </span>
                 </div>
@@ -237,8 +238,7 @@ function CreateSessionModal({
     ? projects.filter(
         (project) =>
           project.status !== "Gennemført" &&
-          project.location.trim().toLocaleLowerCase("da") ===
-            selectedLocation.name.trim().toLocaleLowerCase("da"),
+          isProjectAtLocation(project, selectedLocation),
       )
     : [];
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -313,8 +313,8 @@ function CreateSessionModal({
               placeholder="F.eks. Fredagsbouldering"
             />
           </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block text-sm font-extrabold">
+          <div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">
+            <label className="block min-w-0 text-sm font-extrabold">
               Dato
               <input
                 required
@@ -324,7 +324,7 @@ function CreateSessionModal({
                 className={field}
               />
             </label>
-            <label className="block text-sm font-extrabold">
+            <label className="block min-w-0 text-sm font-extrabold">
               Tid
               <input required name="time" type="time" className={field} />
             </label>

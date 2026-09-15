@@ -1,3 +1,17 @@
+const placeSlugs = {
+  "aarhus-city": "boulders-aarhus-city",
+  "aarhus-nord": "boulders-aarhus-nord",
+  "aarhus-syd": "boulders-aarhus-syd",
+  "aarhus-aaby": "boulders-aarhus-aaby",
+  sydhavn: "boulders-kbh-sydhavn",
+  valby: "boulders-valby",
+  hvidovre: "boulders-hvidovre",
+  amager: "boulders-amager",
+  odense: "boulders-odense",
+  vanlose: "boulders-vanloese",
+  aalborg: "boulders-aalborg",
+};
+
 export const climbingLocations = [
   { id: "aarhus-city", name: "Boulders Aarhus City", region: "Jylland", address: "Ankersgade 12C, 8000 Aarhus C", hours: "08:00 – 23:00", mapsUrl: "https://maps.app.goo.gl/SMkpD26p5j75nn2Y8", imageUrl: "https://storage.googleapis.com/boulderscss/gyms/cards/aarhus-city.webp", instagramUrl: "https://www.instagram.com/bouldersaarhuscity", facebookUrl: "https://www.facebook.com/BouldersAarhusCity", email: "aarhusc@boulders.dk", phone: "+4572100019" },
   { id: "aarhus-nord", name: "Boulders Aarhus Nord", region: "Jylland", address: "Graham Bells Vej 18A, 8200 Aarhus N", hours: "10:00 – 22:00", mapsUrl: "https://maps.app.goo.gl/sRT8xMkaZa8EfCAb7", imageUrl: "https://storage.googleapis.com/boulderscss/gyms/cards/aarhus-nord.webp", instagramUrl: "https://www.instagram.com/bouldersaarhusnord/", facebookUrl: "https://www.facebook.com/BouldersAarhusNord", email: "aarhusn@boulders.dk", phone: "+4572100019" },
@@ -10,4 +24,4 @@ export const climbingLocations = [
   { id: "odense", name: "Boulders Odense", region: "Fyn", address: "Wichmandsgade 11, 5000 Odense C", hours: "10:00 – 22:00", mapsUrl: "https://maps.app.goo.gl/Dt2HbrRTWj44D2EN8", imageUrl: "https://storage.googleapis.com/boulderscss/gyms/cards/odense.webp", instagramUrl: "https://www.instagram.com/bouldersodense/", facebookUrl: "https://www.facebook.com/BouldersOdense", email: "odense@boulders.dk", phone: "+4572100019" },
   { id: "vanlose", name: "Boulders Vanløse", region: "Sjælland", address: "Vanløse Torv 1, Krone 2720 Vanløse", hours: "08:00 – 23:00", mapsUrl: "https://www.google.com/maps/dir/?api=1&destination=Jyllingevej+44,2720+Vanløse", imageUrl: "https://storage.googleapis.com/boulderscss/gyms/cards/vanlose.webp", instagramUrl: "https://www.instagram.com/bouldersvanloese/", facebookUrl: "https://www.facebook.com/bouldersvanloese", email: "hej@boulders.dk", phone: "+4572100019" },
   { id: "aalborg", name: "Boulders Aalborg", region: "Jylland", address: "Skjernvej 4A, 9220 Aalborg", hours: "10:00 – 22:00", mapsUrl: "https://maps.app.goo.gl/17Y9Hvyy57EC1Kjv5", imageUrl: "https://storage.googleapis.com/boulderscss/gyms/cards/aalborg.webp", instagramUrl: "https://www.instagram.com/bouldersaalborg/", facebookUrl: "https://www.facebook.com/bouldersaalborg", email: "aalborg@boulders.dk", phone: "+4522274941" },
-].map(location => ({ ...location, chain: "Boulders", type: "Bouldering", country: "Danmark", hoursNote: "hver dag", status: "open" }));
+].map(location => ({ ...location, placeSlug: placeSlugs[location.id], chain: "Boulders", type: "Bouldering", country: "Danmark", hoursNote: "hver dag", status: "open" }));
