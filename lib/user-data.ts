@@ -31,6 +31,7 @@ type ProjectNode = {
   name: string;
   location: string;
   grade: ClimbingGrade;
+  colorGrade?: ClimbingProject["colorGrade"];
   attempts: number;
   lastAttempt: string;
   note: string;
@@ -76,6 +77,7 @@ function publicProject(row: ProjectNode): ClimbingProject {
     name: row.name,
     location: row.location,
     grade: row.grade,
+    colorGrade: row.colorGrade,
     attempts: neo4jNumber(row.attempts),
     lastAttempt: row.lastAttempt,
     note: row.note,
@@ -147,6 +149,7 @@ export async function createUserProject(
       image: string;
     };
     grade: ClimbingGrade;
+    colorGrade?: ClimbingProject["colorGrade"];
     note: string;
     image?: string;
     attempt?: boolean;
@@ -156,7 +159,7 @@ export async function createUserProject(
   },
 ) {
   const result = await db.executeQuery(
-    `MATCH (u:User {id: $userId}) MERGE (place:Place {id: $placeId}) SET place.slug = $placeSlug, place.name = $location, place.street = $street, place.postalCode = $postalCode, place.city = $city, place.image = $placeImage CREATE (u)-[:WORKS_ON]->(p:Project { id: $id, name: $name, location: $location, placeSlug: $placeSlug, grade: $grade, note: $note, image: $image, visible: $visible, attempts: 0, lastAttempt: 'Ikke forsøgt endnu', status: $status, progress: $progress, createdAt: datetime() })-[:AT_PLACE]->(place) RETURN p`,
+    `MATCH (u:User {id: $userId}) MERGE (place:Place {id: $placeId}) SET place.slug = $placeSlug, place.name = $location, place.street = $street, place.postalCode = $postalCode, place.city = $city, place.image = $placeImage CREATE (u)-[:WORKS_ON]->(p:Project { id: $id, name: $name, location: $location, placeSlug: $placeSlug, grade: $grade, colorGrade: $colorGrade, note: $note, image: $image, visible: $visible, attempts: 0, lastAttempt: 'Ikke forsøgt endnu', status: $status, progress: $progress, createdAt: datetime() })-[:AT_PLACE]->(place) RETURN p`,
     {
       userId,
       id: randomBytes(12).toString("hex"),
@@ -169,6 +172,7 @@ export async function createUserProject(
       city: input.place.city,
       placeImage: input.place.image,
       grade: input.grade,
+      colorGrade: input.colorGrade || null,
       note: input.note.trim(),
       image: input.image || input.place.image,
       visible: input.visible === true,
@@ -199,14 +203,17 @@ export async function updateUserProject(
   input: {
     progress: number;
     status: ClimbingProject["status"];
+    grade: ClimbingGrade;
     note: string;
+    colorGrade?: ClimbingProject["colorGrade"];
     image?: string;
     attempt?: boolean;
   },
 ) {
   const result = await db.executeQuery(
     `MATCH (:User {id: $userId})-[:WORKS_ON]->(p:Project {id: $projectId})
-    SET p.progress = $progress, p.status = $status, p.note = $note,
+    SET p.progress = $progress, p.status = $status, p.note = $note, p.grade = $grade,
+        p.colorGrade = CASE WHEN $colorGrade IS NULL THEN p.colorGrade ELSE $colorGrade END,
         p.image = CASE WHEN $image IS NULL THEN p.image ELSE $image END,
         p.updatedAt = datetime(),
         p.attempts = coalesce(p.attempts, 0) + CASE WHEN $attempt THEN 1 ELSE 0 END,
@@ -217,7 +224,9 @@ export async function updateUserProject(
       projectId,
       progress: input.progress,
       status: input.status,
+      grade: input.grade,
       note: input.note.trim(),
+      colorGrade: input.colorGrade || null,
       image: input.image || null,
       attempt: input.attempt === true,
     },
@@ -388,7 +397,7 @@ function publicSession(
     createdAt: session.createdAt.toString(),
     ...(project
       ? {
-          project: { id: project.id, name: project.name, grade: project.grade, visible: project.visible === true },
+          project: { id: project.id, name: project.name, grade: project.grade, colorGrade: project.colorGrade, visible: project.visible === true },
         }
       : {}),
     host: { id: host.id, name: host.name, initials: initials(host.name) },

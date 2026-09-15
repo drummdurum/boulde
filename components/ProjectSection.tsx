@@ -25,7 +25,7 @@ function ProjectCard({ project }: { project: ClimbingProject }) {
         <div>
           <h3 className="font-extrabold text-ink">{project.name}</h3>
           <p className="mt-1 text-xs text-muted">
-            {project.location} · {project.grade}
+            {project.location} · {project.grade}{project.colorGrade ? ` · ${project.colorGrade}` : ""}
           </p>
         </div>
         <Badge tone={tone}>

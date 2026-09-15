@@ -4,16 +4,21 @@ import type { User } from "@/types";
 import type { ClimbingProject, Post } from "@/types";
 import { Avatar } from "./ui/Avatar";
 import { Button } from "./ui/Button";
-
-const gradeOrder = ["5+", "6A", "6B", "6C", "7A", "7A+", "7B", "7C", "8A"] as const;
+import { climbingColors, climbingColorStyles, climbingGrades } from "@/lib/grading";
 
 export function UserProfilePage({ user, createdAt, posts, projects, followCounts }: { user: User; createdAt: string; posts: Post[]; projects: ClimbingProject[]; followCounts: { followers: number; following: number } }) {
   const memberSince = new Intl.DateTimeFormat("da-DK", { month: "long", year: "numeric" }).format(new Date(createdAt));
   const completedProjects = projects.filter(project => project.status === "Gennemført");
   const highestGrade = completedProjects.reduce<string>((highest, project) => {
-    const currentIndex = gradeOrder.indexOf(project.grade);
-    const highestIndex = gradeOrder.indexOf(highest as (typeof gradeOrder)[number]);
+    const currentIndex = climbingGrades.indexOf(project.grade);
+    const highestIndex = climbingGrades.indexOf(highest as (typeof climbingGrades)[number]);
     return currentIndex > highestIndex ? project.grade : highest;
+  }, "—");
+  const highestColor = completedProjects.reduce<string>((highest, project) => {
+    if (!project.colorGrade) return highest;
+    const currentIndex = climbingColors.indexOf(project.colorGrade);
+    const highestIndex = climbingColors.indexOf(highest as (typeof climbingColors)[number]);
+    return currentIndex > highestIndex ? project.colorGrade : highest;
   }, "—");
   const visitedLocations = new Set(completedProjects.map(project =>
     (project.placeSlug || project.location).trim().toLocaleLowerCase("da-DK"),
@@ -21,6 +26,7 @@ export function UserProfilePage({ user, createdAt, posts, projects, followCounts
   const stats = [
     [String(completedProjects.length), "Gennemførte", CheckCircle2],
     [highestGrade, "Højeste grade", Mountain],
+    [highestColor, "Højeste farve", Mountain],
     [String(projects.filter(project => project.status !== "Gennemført").length), "Aktive projekter", Target],
     [String(visitedLocations), "Klatresteder", MapPin]
   ] as const;
@@ -37,8 +43,8 @@ export function UserProfilePage({ user, createdAt, posts, projects, followCounts
           <div className="mt-6 flex gap-6 border-t border-line pt-5 text-sm"><span><strong className="block text-lg text-ink">{followCounts.followers}</strong><span className="text-muted">Følgere</span></span><span><strong className="block text-lg text-ink">{followCounts.following}</strong><span className="text-muted">Følger</span></span></div>
         </div>
       </section>
-      <section aria-label="Profilstatistik" className="my-5 grid grid-cols-2 gap-3 md:grid-cols-4">{stats.map(([value, label, Icon]) => <article key={label} className="rounded-[20px] border border-line bg-limestone p-4 shadow-soft"><Icon className="text-moss" size={18} /><strong className="mt-4 block text-2xl text-ink">{value}</strong><span className="text-xs font-semibold text-muted">{label}</span></article>)}</section>
-      <section className="rounded-[26px] border border-line bg-limestone p-6 shadow-soft"><div className="flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">Klatrehistorik</p><h2 className="mt-1 text-xl font-extrabold text-ink">Gennemførte projekter</h2></div><CheckCircle2 className="text-positive" /></div>{completedProjects.length ? <div className="mt-5 space-y-3">{completedProjects.map(project => <article key={project.id} className="rounded-2xl bg-sand p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-extrabold">{project.name}</h3><span className="text-xs font-extrabold text-positive">100%</span></div><p className="mt-1 text-sm font-semibold text-muted">{project.location} · {project.grade}</p></article>)}</div> : <p className="mt-5 text-sm font-semibold text-muted">Dine gennemførte projekter kommer til at ligge her.</p>}</section>
+      <section aria-label="Profilstatistik" className="my-5 grid grid-cols-2 gap-3 md:grid-cols-5">{stats.map(([value, label, Icon]) => <article key={label} className="rounded-[20px] border border-line bg-limestone p-4 shadow-soft"><Icon className="text-moss" size={18} /><strong className="mt-4 flex items-center gap-2 text-2xl text-ink">{label === "Højeste farve" && value !== "—" && <span className="h-4 w-4 rounded-full border border-black/10" style={{ backgroundColor: climbingColorStyles[value as keyof typeof climbingColorStyles] }} />}{value}</strong><span className="text-xs font-semibold text-muted">{label}</span></article>)}</section>
+      <section className="rounded-[26px] border border-line bg-limestone p-6 shadow-soft"><div className="flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">Klatrehistorik</p><h2 className="mt-1 text-xl font-extrabold text-ink">Gennemførte projekter</h2></div><CheckCircle2 className="text-positive" /></div>{completedProjects.length ? <div className="mt-5 space-y-3">{completedProjects.map(project => <article key={project.id} className="rounded-2xl bg-sand p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-extrabold">{project.name}</h3><span className="text-xs font-extrabold text-positive">100%</span></div><p className="mt-1 flex flex-wrap items-center gap-2 text-sm font-semibold text-muted"><span>{project.location} · {project.grade}</span>{project.colorGrade && <span className="flex items-center gap-1"><span className="h-3 w-3 rounded-full border border-black/10" style={{ backgroundColor: climbingColorStyles[project.colorGrade] }} />{project.colorGrade}</span>}</p></article>)}</div> : <p className="mt-5 text-sm font-semibold text-muted">Dine gennemførte projekter kommer til at ligge her.</p>}</section>
     </div>
   </main>;
 }

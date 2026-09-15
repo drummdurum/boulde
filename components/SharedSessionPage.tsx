@@ -194,14 +194,14 @@ export function SharedSessionPage({
                     <Info
                       icon={Target}
                       label="Offentligt projekt · åbn"
-                      value={`${session.project.name} · ${session.project.grade}`}
+                      value={`${session.project.name} · ${session.project.grade}${session.project.colorGrade ? ` · ${session.project.colorGrade}` : ""}`}
                     />
                   </Link>
                 ) : (
                   <Info
                     icon={Target}
                     label="Projekt"
-                    value={`${session.project.name} · ${session.project.grade}`}
+                    value={`${session.project.name} · ${session.project.grade}${session.project.colorGrade ? ` · ${session.project.colorGrade}` : ""}`}
                   />
                 ))}
             </div>

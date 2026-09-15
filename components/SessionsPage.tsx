@@ -124,7 +124,7 @@ export function SessionsPage({
                   {session.project && (
                     <p className="flex items-center gap-2">
                       <Target size={16} />
-                      {session.project.name} · {session.project.grade}
+                      {session.project.name} · {session.project.grade}{session.project.colorGrade ? ` · ${session.project.colorGrade}` : ""}
                     </p>
                   )}
                 </div>
@@ -362,7 +362,7 @@ function CreateSessionModal({
               <option value="">Ingen – fri klatring</option>
               {eligibleProjects.map((project) => (
                 <option key={project.id} value={project.id}>
-                  {project.name} · {project.grade}
+                  {project.name} · {project.grade}{project.colorGrade ? ` · ${project.colorGrade}` : ""}
                 </option>
               ))}
             </select>

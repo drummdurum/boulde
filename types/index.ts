@@ -1,4 +1,5 @@
 export type ClimbingGrade = "5+" | "6A" | "6B" | "6C" | "7A" | "7A+" | "7B" | "7C" | "8A";
+export type ClimbingColor = "Grøn" | "Gul" | "Orange" | "Blå" | "Lilla" | "Rød" | "Sort" | "Pink";
 export type ClimbingType = "Boulder" | "Sportsklatring" | "Indendørs";
 export type ProjectStatus = "Ny" | "Arbejder på den" | "Tæt på" | "Gennemført";
 
@@ -16,6 +17,7 @@ export interface Post {
 }
 export interface ClimbingProject {
   id: string; name: string; location: string; grade: ClimbingGrade; attempts: number;
+  colorGrade?: ClimbingColor;
   lastAttempt: string; note: string; status: ProjectStatus; progress: number; visible: boolean;
   image?: string; placeSlug?: string;
   owner?: Pick<User, "id" | "name" | "username" | "initials">;
@@ -40,7 +42,7 @@ export interface ClimbingLocation {
 }
 export interface ClimbingSession {
   id: string; shareId: string; title: string; date: string; time: string; location: string;
-  project?: Pick<ClimbingProject, "id" | "name" | "grade" | "visible">;
+  project?: Pick<ClimbingProject, "id" | "name" | "grade" | "colorGrade" | "visible">;
   host: Pick<User, "id" | "name" | "initials">;
   participants: Array<{ id: string; name: string; initials: string }>;
   viewerRole?: "host" | "invitee";

@@ -87,6 +87,8 @@ describe("POST /api/projects", () => {
     form.set("grade", "6B");
     form.set("progress", "100");
     form.set("status", "Tæt på");
+    form.set("grade", "7A");
+    form.set("colorGrade", "Lilla");
     await POST(new Request("http://localhost/api/projects", { method: "POST", body: form }));
     expect(mocks.createUserProject).toHaveBeenCalledWith(
       "user-1",
@@ -113,6 +115,8 @@ describe("PATCH /api/projects", () => {
     form.set("progress", "70");
     form.set("status", "Tæt på");
     form.set("note", "Næsten der");
+    form.set("grade", "7A");
+    form.set("colorGrade", "Lilla");
     const response = await PATCH(
       new Request("http://localhost/api/projects", {
         method: "PATCH",
@@ -124,7 +128,7 @@ describe("PATCH /api/projects", () => {
     expect(mocks.updateUserProject).toHaveBeenCalledWith(
       "user-1",
       "project-1",
-      { progress: 70, status: "Tæt på", note: "Næsten der", image: undefined },
+      { progress: 70, status: "Tæt på", grade: "7A", colorGrade: "Lilla", note: "Næsten der", image: undefined },
     );
   });
 
@@ -149,6 +153,8 @@ describe("PATCH /api/projects", () => {
     form.set("id", "project-1");
     form.set("progress", "70");
     form.set("status", "Gennemført");
+    form.set("grade", "6B");
+    form.set("colorGrade", "Blå");
     await PATCH(new Request("http://localhost/api/projects", { method: "PATCH", body: form }));
     expect(mocks.updateUserProject).toHaveBeenCalledWith(
       "user-1",

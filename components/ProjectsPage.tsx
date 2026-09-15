@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import type { ClimbingProject, ProjectStatus } from "@/types";
 import { places as defaultPlaces, type Place } from "@/lib/places";
+import { climbingColors, climbingColorStyles, climbingGrades } from "@/lib/grading";
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { MediaUploadModal, ProjectMediaPanel } from "./ProjectMedia";
@@ -304,7 +305,7 @@ function ConnectionProjects({ projects }: { projects: ClimbingProject[] }) {
             </div>
             <h3 className="mt-3 text-lg font-extrabold">{project.name}</h3>
             <p className="mt-1 text-sm font-semibold text-muted">
-              {project.location} · {project.grade}
+              {project.location} · {project.grade}{project.colorGrade ? ` · ${project.colorGrade}` : ""}
             </p>
             <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-sand">
               <div
@@ -517,11 +518,17 @@ function CreateProjectModal({
           <label className="block text-sm font-extrabold">
             Grade
             <select name="grade" className={inputClass}>
-              {["5+", "6A", "6B", "6C", "7A", "7A+", "7B", "7C", "8A"].map(
+              {climbingGrades.map(
                 (grade) => (
                   <option key={grade}>{grade}</option>
                 ),
               )}
+            </select>
+          </label>
+          <label className="block text-sm font-extrabold">
+            Boulders-farve
+            <select name="colorGrade" className={inputClass}>
+              {climbingColors.map(color => <option key={color}>{color}</option>)}
             </select>
           </label>
           <label className="block text-sm font-extrabold">
@@ -702,6 +709,18 @@ function EditProjectModal({
             </label>
           </div>
           <label className="block text-sm font-extrabold">
+            Grade
+            <select name="grade" defaultValue={project.grade} className="mt-2 h-11 w-full rounded-2xl border border-line bg-sand px-4 font-normal">
+              {climbingGrades.map(grade => <option key={grade}>{grade}</option>)}
+            </select>
+          </label>
+          <label className="block text-sm font-extrabold">
+            Boulders-farve
+            <select name="colorGrade" defaultValue={project.colorGrade || "Grøn"} className="mt-2 h-11 w-full rounded-2xl border border-line bg-sand px-4 font-normal">
+              {climbingColors.map(color => <option key={color}>{color}</option>)}
+            </select>
+          </label>
+          <label className="block text-sm font-extrabold">
             Fremskridt: <output>{progress}%</output>
             <input
               name="progress"
@@ -803,6 +822,7 @@ function ProjectListCard({
         >
           {project.grade}
         </span>
+        {project.colorGrade && <span className={`flex items-center gap-1.5 text-xs font-extrabold ${active ? "text-limestone" : "text-muted"}`}><span className="h-3 w-3 rounded-full border border-black/10" style={{ backgroundColor: climbingColorStyles[project.colorGrade] }} />{project.colorGrade}</span>}
       </div>
       <div
         className={`mt-4 h-1.5 overflow-hidden rounded-full ${active ? "bg-limestone/15" : "bg-sand"}`}
@@ -871,6 +891,7 @@ function ProjectDetail({
             {project.grade}
           </span>
         </Badge>
+        {project.colorGrade && <span className="absolute left-5 top-16 flex items-center gap-1.5 rounded-full bg-limestone px-3 py-2 text-xs font-extrabold text-ink"><span className="h-3 w-3 rounded-full border border-black/10" style={{ backgroundColor: climbingColorStyles[project.colorGrade] }} />{project.colorGrade}</span>}
         <Button
           onClick={onEdit}
           variant="outline"

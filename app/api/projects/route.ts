@@ -10,10 +10,12 @@ import {
   setProjectVisibility,
   updateUserProject,
 } from "@/lib/user-data";
-import type { ClimbingGrade, ProjectStatus } from "@/types";
+import type { ClimbingColor, ClimbingGrade, ProjectStatus } from "@/types";
+import { climbingColors, climbingGrades } from "@/lib/grading";
 import { placeById } from "@/lib/places";
 
-const grades = new Set(["5+", "6A", "6B", "6C", "7A", "7A+", "7B", "7C", "8A"]);
+const grades = new Set(climbingGrades);
+const colors = new Set(climbingColors);
 async function currentUser() {
   return userFromSession(cookies().get(SESSION_COOKIE)?.value);
 }
@@ -35,6 +37,7 @@ export async function POST(request: Request) {
   const name = body.get("name");
   const placeId = body.get("placeId");
   const grade = body.get("grade");
+  const colorGrade = body.get("colorGrade");
   const note = body.get("note");
   const progressValue = body.get("progress");
   const status = body.get("status");
@@ -45,11 +48,13 @@ export async function POST(request: Request) {
       { error: "Udfyld projektnavn og vælg et gyldigt sted." },
       { status: 400 },
     );
-  if (typeof grade !== "string" || !grades.has(grade))
+  if (typeof grade !== "string" || !grades.has(grade as ClimbingGrade))
     return NextResponse.json(
       { error: "Vælg en gyldig grade." },
       { status: 400 },
     );
+  if (colorGrade !== null && (typeof colorGrade !== "string" || !colors.has(colorGrade as ClimbingColor)))
+    return NextResponse.json({ error: "Vælg en gyldig Boulders-farve." }, { status: 400 });
   const progress =
     typeof progressValue === "string" ? Number(progressValue) : 0;
   const statuses = new Set(["Ny", "Arbejder på den", "Tæt på", "Gennemført"]);
@@ -106,6 +111,7 @@ export async function POST(request: Request) {
         name,
         place,
         grade: grade as ClimbingGrade,
+        colorGrade: typeof colorGrade === "string" ? colorGrade as ClimbingColor : undefined,
         note: typeof note === "string" ? note : "",
         image,
         visible,
@@ -129,7 +135,9 @@ export async function PATCH(request: Request) {
     const id = body.get("id");
     const progressValue = body.get("progress");
     const status = body.get("status");
+    const grade = body.get("grade");
     const note = body.get("note");
+    const colorGrade = body.get("colorGrade");
     const imageFile = body.get("image");
     const progress =
       typeof progressValue === "string" ? Number(progressValue) : NaN;
@@ -140,6 +148,9 @@ export async function PATCH(request: Request) {
       progress < 0 ||
       progress > 100 ||
       typeof status !== "string" ||
+      typeof grade !== "string" ||
+      !grades.has(grade as ClimbingGrade) ||
+      (colorGrade !== null && (typeof colorGrade !== "string" || !colors.has(colorGrade as ClimbingColor))) ||
       !statuses.has(status)
     )
       return NextResponse.json(
@@ -181,7 +192,9 @@ export async function PATCH(request: Request) {
     const project = await updateUserProject(user.id, id, {
       progress: normalizedProgress,
       status: normalizedStatus,
+      grade: grade as ClimbingGrade,
       note: typeof note === "string" ? note : "",
+      colorGrade: typeof colorGrade === "string" ? colorGrade as ClimbingColor : undefined,
       image,
       ...(body.get("attempt") === "true" ? { attempt: true } : {}),
     });
