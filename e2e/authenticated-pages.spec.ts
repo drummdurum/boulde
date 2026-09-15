@@ -167,7 +167,7 @@ test("opretter og deler en global session med live tilmelding", async ({
   await dialog.getByLabel("Titel").fill(sessionTitle);
   await dialog.getByLabel("Dato").fill(tomorrow);
   await dialog.getByLabel("Tid").fill("18:30");
-  await dialog.getByLabel("Sted").selectOption("sydhavn");
+  await dialog.getByLabel("Sted").selectOption("gym-6");
   await dialog
     .getByRole("button", { name: "Opret session og invitér" })
     .click();

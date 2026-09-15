@@ -14,11 +14,11 @@ import {
   X,
 } from "lucide-react";
 import type {
-  ClimbingLocation,
   ClimbingProject,
   ClimbingSession,
   SessionInvitee,
 } from "@/types";
+import type { Place } from "@/lib/places";
 import { isProjectAtLocation } from "@/lib/location-match";
 import { Button } from "./ui/Button";
 
@@ -31,7 +31,7 @@ export function SessionsPage({
   initialSessions: ClimbingSession[];
   projects: ClimbingProject[];
   connections: SessionInvitee[];
-  locations: ClimbingLocation[];
+  locations: Place[];
 }) {
   const [sessions, setSessions] = useState(initialSessions);
   const [open, setOpen] = useState(false);
@@ -223,7 +223,7 @@ function CreateSessionModal({
 }: {
   projects: ClimbingProject[];
   connections: SessionInvitee[];
-  locations: ClimbingLocation[];
+  locations: Place[];
   onClose: () => void;
   onCreated: (session: ClimbingSession) => void;
 }) {
@@ -346,7 +346,7 @@ function CreateSessionModal({
               </option>
               {locations.map((location) => (
                 <option key={location.id} value={location.id}>
-                  {location.name} · {location.region}
+                  {location.name} · {location.city}
                 </option>
               ))}
             </select>

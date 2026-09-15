@@ -1,4 +1,4 @@
-import type { ClimbingLocation, ClimbingProject } from "@/types";
+import type { ClimbingProject } from "@/types";
 
 function normalized(value: string | undefined) {
   return value?.trim().toLocaleLowerCase("da-DK") ?? "";
@@ -6,10 +6,11 @@ function normalized(value: string | undefined) {
 
 export function isProjectAtLocation(
   project: Pick<ClimbingProject, "location" | "placeSlug">,
-  location: Pick<ClimbingLocation, "name" | "placeSlug">,
+  location: { name: string; placeSlug?: string; slug?: string },
 ) {
-  if (project.placeSlug && location.placeSlug) {
-    return normalized(project.placeSlug) === normalized(location.placeSlug);
+  const locationSlug = location.placeSlug ?? location.slug;
+  if (project.placeSlug && locationSlug) {
+    return normalized(project.placeSlug) === normalized(locationSlug);
   }
   return normalized(project.location) === normalized(location.name);
 }

@@ -7,7 +7,7 @@ const mocks = vi.hoisted(() => ({
   getConnectedUsers: vi.fn(),
   getMailRecipients: vi.fn(),
   canInviteUser: vi.fn(),
-  getClimbingLocation: vi.fn(),
+  getPlaces: vi.fn(),
 }));
 
 vi.mock("next/headers", () => ({ cookies: () => ({ get: () => ({ value: "session" }) }) }));
@@ -20,7 +20,7 @@ vi.mock("@/lib/user-data", () => ({
 vi.mock("@/lib/social", () => ({ getConnectedUsers: mocks.getConnectedUsers, getMailRecipients: mocks.getMailRecipients }));
 vi.mock("@/lib/mail-service", () => ({ requestSessionInvitationEmail: vi.fn() }));
 vi.mock("@/lib/preferences", () => ({ canInviteUser: mocks.canInviteUser }));
-vi.mock("@/lib/locations", () => ({ getClimbingLocation: mocks.getClimbingLocation }));
+vi.mock("@/lib/place-data", () => ({ getPlaces: mocks.getPlaces }));
 
 import { POST } from "./route";
 
@@ -40,7 +40,7 @@ describe("POST /api/sessions", () => {
     mocks.getConnectedUsers.mockResolvedValue([{ id: "connection-1" }]);
     mocks.getMailRecipients.mockResolvedValue([]);
     mocks.canInviteUser.mockResolvedValue(true);
-    mocks.getClimbingLocation.mockResolvedValue({ id: "hallen", name: "Hallen", placeSlug: "hallen" });
+    mocks.getPlaces.mockResolvedValue([{ id: "hallen", name: "Hallen", slug: "hallen" }]);
     mocks.createClimbingSession.mockResolvedValue({ id: "session-1", ...validInput, location: "Hallen" });
   });
 
@@ -62,13 +62,13 @@ describe("POST /api/sessions", () => {
   });
 
   it("accepterer et projekt, når sted-slug matcher trods forskellige hallenavne", async () => {
-    mocks.getClimbingLocation.mockResolvedValueOnce({ id: "sydhavn", name: "Boulders Sydhavn", placeSlug: "boulders-kbh-sydhavn" });
+    mocks.getPlaces.mockResolvedValueOnce([{ id: "gym-6", name: "Boulders KBH Sydhavn", slug: "boulders-kbh-sydhavn" }]);
     mocks.getUserProjects.mockResolvedValueOnce([{ id: "project-1", status: "Arbejder på den", location: "Boulders KBH Sydhavn", placeSlug: "boulders-kbh-sydhavn" }]);
 
-    const response = await POST(request({ ...validInput, locationId: "sydhavn", projectId: "project-1" }));
+    const response = await POST(request({ ...validInput, locationId: "gym-6", projectId: "project-1" }));
 
     expect(response.status).toBe(201);
-    expect(mocks.createClimbingSession).toHaveBeenCalledWith("host-1", expect.objectContaining({ projectId: "project-1", location: "Boulders Sydhavn" }));
+    expect(mocks.createClimbingSession).toHaveBeenCalledWith("host-1", expect.objectContaining({ projectId: "project-1", location: "Boulders KBH Sydhavn" }));
   });
 
   it("afviser en følger, som ikke er en accepteret forbindelse", async () => {

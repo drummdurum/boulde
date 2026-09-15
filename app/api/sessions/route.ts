@@ -5,7 +5,7 @@ import { createClimbingSession, getUserProjects, getUserSessions } from "@/lib/u
 import { getConnectedUsers, getMailRecipients } from "@/lib/social";
 import { requestSessionInvitationEmail } from "@/lib/mail-service";
 import { canInviteUser } from "@/lib/preferences";
-import { getClimbingLocation } from "@/lib/locations";
+import { getPlaces } from "@/lib/place-data";
 import { isProjectAtLocation } from "@/lib/location-match";
 
 async function currentUser() { return userFromSession(cookies().get(SESSION_COOKIE)?.value); }
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
   if (!body || typeof body !== "object") return NextResponse.json({ error: "Ugyldig forespørgsel." }, { status: 400 });
   if (![body.title, body.date, body.time, body.locationId].every(value => typeof value === "string" && value.trim())) return NextResponse.json({ error: "Udfyld titel, dato, tid og sted." }, { status: 400 });
   if (!isValidDate(body.date) || !isValidTime(body.time)) return NextResponse.json({ error: "Vælg en gyldig dato og tid." }, { status: 400 });
-  const location = await getClimbingLocation(body.locationId);
+  const location = (await getPlaces()).find(place => place.id === body.locationId);
   if (!location) return NextResponse.json({ error: "Klatrestedet blev ikke fundet." }, { status: 404 });
   if (body.projectId) {
     const project = (await getUserProjects(user.id)).find(project => project.id === body.projectId);

@@ -1,12 +1,13 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { ClimbingLocation, ClimbingProject, ClimbingSession, SessionInvitee } from "@/types";
+import type { ClimbingProject, ClimbingSession, SessionInvitee } from "@/types";
+import type { Place } from "@/lib/places";
 import { SessionsPage } from "./SessionsPage";
 
 const host = { id: "host", name: "Helle Host", initials: "HH" };
 const connection: SessionInvitee = { id: "friend", name: "Freja Friend", username: "freja", initials: "FF" };
-const location: ClimbingLocation = { id: "sydhavn", placeSlug: "boulders-kbh-sydhavn", name: "Boulders Sydhavn", region: "Hovedstaden", address: "Testvej 1", hours: "10-22", hoursNote: "", status: "open", type: "Bouldering", chain: "Boulders", country: "Danmark", imageUrl: "/test.jpg", mapsUrl: "https://maps.example" };
+const location: Place = { id: "gym-6", slug: "boulders-kbh-sydhavn", name: "Boulders KBH Sydhavn", street: "Testvej 1", postalCode: "2450", city: "København", type: "Bouldering", image: "/test.jpg", imageAlt: "Test" };
 const project = (overrides: Partial<ClimbingProject>): ClimbingProject => ({ id: "project-1", name: "Det aktive projekt", location: "Boulders KBH Sydhavn", placeSlug: "boulders-kbh-sydhavn", grade: "6B", attempts: 1, lastAttempt: "I går", note: "", status: "Arbejder på den", progress: 40, visible: true, ...overrides });
 const pendingSession: ClimbingSession = {
   id: "session-1",
@@ -36,7 +37,7 @@ describe("SessionsPage invitationer", () => {
     await user.type(screen.getByLabelText("Titel"), "Aftenbouldering");
     await user.type(screen.getByLabelText("Dato"), "2099-06-12");
     await user.type(screen.getByLabelText("Tid"), "18:30");
-    await user.selectOptions(screen.getByLabelText("Sted"), "sydhavn");
+    await user.selectOptions(screen.getByLabelText("Sted"), "gym-6");
     await user.click(screen.getByRole("checkbox", { name: /Freja Friend/ }));
     await user.click(screen.getByRole("button", { name: "Opret session og invitér" }));
 
@@ -47,7 +48,7 @@ describe("SessionsPage invitationer", () => {
       title: "Aftenbouldering",
       date: "2099-06-12",
       time: "18:30",
-      locationId: "sydhavn",
+      locationId: "gym-6",
       inviteeIds: ["friend"],
     });
     expect(await screen.findByRole("heading", { name: "Aftenbouldering" })).toBeInTheDocument();
@@ -74,7 +75,7 @@ describe("SessionsPage invitationer", () => {
     ]} connections={[]} locations={[location]} />);
 
     await userEvent.click(screen.getByRole("button", { name: "Opret session" }));
-    await userEvent.selectOptions(screen.getByLabelText("Sted"), "sydhavn");
+    await userEvent.selectOptions(screen.getByLabelText("Sted"), "gym-6");
 
     expect(screen.getByRole("option", { name: "Det aktive projekt · 6B" })).toBeInTheDocument();
     expect(screen.queryByRole("option", { name: /Allerede færdig/ })).not.toBeInTheDocument();

@@ -49,7 +49,7 @@ test("forbindelse, invitationspolitik og direkte sessioninvitation virker samlet
     const usersBody = await usersResponse.json();
     const inviteeId = usersBody.users[0].id as string;
     const date = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
-    const sessionInput = { title: `Direkte invitation ${runId}`, date, time: "18:30", locationId: "sydhavn", inviteeIds: [inviteeId] };
+    const sessionInput = { title: `Direkte invitation ${runId}`, date, time: "18:30", locationId: "gym-6", inviteeIds: [inviteeId] };
 
     const blockResponse = await inviteeContext.request.patch("/api/settings", { data: { sessionInvitePolicy: "none" } });
     expect(blockResponse.ok()).toBe(true);
