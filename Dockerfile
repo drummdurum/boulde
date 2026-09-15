@@ -30,4 +30,4 @@ RUN mkdir -p /app/public/uploads/projects /app/public/uploads/posts \
     && chown -R node:node /app/public/uploads
 USER node
 EXPOSE 3000
-CMD ["/bin/sh", "-c", "node scripts/migrate.mjs && exec node server.js"]
+CMD ["/bin/sh", "-c", "node scripts/migrate.mjs && node scripts/seed-locations.mjs && exec node server.js"]

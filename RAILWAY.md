@@ -6,7 +6,7 @@ Deploy this repository as the `web` service in the same Railway project and envi
 
 - Generate a public domain.
 - Set the healthcheck path to `/api/health`.
-- Keep the Dockerfile start command. It applies the idempotent Neo4j schema migration before starting Next.js; it does not seed test data.
+- Keep the Dockerfile start command. It applies the idempotent Neo4j schema migration and seeds the climbing locations before starting Next.js; it does not seed test users or projects.
 - Do not attach a volume to the web service. User media is stored through the media service.
 
 ## Variables
@@ -38,4 +38,3 @@ After deployment, verify:
 1. `GET https://<web-domain>/api/health` returns `status: ok`.
 2. Registration succeeds and a welcome email is delivered.
 3. A media upload can be completed and viewed.
-

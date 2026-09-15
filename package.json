@@ -8,6 +8,7 @@
     "start": "next start",
     "db:setup": "docker compose -f ../compose.yml up -d --wait neo4j storage && docker compose -f ../compose.yml run --rm storage-init && npm run db:migrate && npm run db:seed",
     "db:migrate": "node scripts/migrate.mjs",
+    "db:seed:locations": "node scripts/seed-locations.mjs",
     "db:seed": "node scripts/seed.mjs",
     "lint": "next lint",
     "test": "vitest run",
