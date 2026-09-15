@@ -5,13 +5,24 @@ import type { ClimbingProject, Post } from "@/types";
 import { Avatar } from "./ui/Avatar";
 import { Button } from "./ui/Button";
 
+const gradeOrder = ["5+", "6A", "6B", "6C", "7A", "7A+", "7B", "7C", "8A"] as const;
+
 export function UserProfilePage({ user, createdAt, posts, projects, followCounts }: { user: User; createdAt: string; posts: Post[]; projects: ClimbingProject[]; followCounts: { followers: number; following: number } }) {
   const memberSince = new Intl.DateTimeFormat("da-DK", { month: "long", year: "numeric" }).format(new Date(createdAt));
+  const completedProjects = projects.filter(project => project.status === "Gennemført");
+  const highestGrade = completedProjects.reduce<string>((highest, project) => {
+    const currentIndex = gradeOrder.indexOf(project.grade);
+    const highestIndex = gradeOrder.indexOf(highest as (typeof gradeOrder)[number]);
+    return currentIndex > highestIndex ? project.grade : highest;
+  }, "—");
+  const visitedLocations = new Set(completedProjects.map(project =>
+    (project.placeSlug || project.location).trim().toLocaleLowerCase("da-DK"),
+  ).filter(Boolean)).size;
   const stats = [
-    [String(projects.filter(project => project.status === "Gennemført").length), "Gennemførte", CheckCircle2],
-    ["—", "Højeste grade", Mountain],
+    [String(completedProjects.length), "Gennemførte", CheckCircle2],
+    [highestGrade, "Højeste grade", Mountain],
     [String(projects.filter(project => project.status !== "Gennemført").length), "Aktive projekter", Target],
-    ["0", "Klatresteder", MapPin]
+    [String(visitedLocations), "Klatresteder", MapPin]
   ] as const;
 
   return <main className="min-h-screen px-4 pb-28 pt-5 sm:px-6 lg:ml-[238px] lg:px-8 lg:pb-10 xl:px-10">
@@ -27,7 +38,7 @@ export function UserProfilePage({ user, createdAt, posts, projects, followCounts
         </div>
       </section>
       <section aria-label="Profilstatistik" className="my-5 grid grid-cols-2 gap-3 md:grid-cols-4">{stats.map(([value, label, Icon]) => <article key={label} className="rounded-[20px] border border-line bg-limestone p-4 shadow-soft"><Icon className="text-moss" size={18} /><strong className="mt-4 block text-2xl text-ink">{value}</strong><span className="text-xs font-semibold text-muted">{label}</span></article>)}</section>
-      <section className="rounded-[26px] border border-line bg-limestone p-6 shadow-soft"><div className="flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">Klatrehistorik</p><h2 className="mt-1 text-xl font-extrabold text-ink">Gennemførte projekter</h2></div><CheckCircle2 className="text-positive" /></div>{projects.filter(project => project.status === "Gennemført").length ? <div className="mt-5 space-y-3">{projects.filter(project => project.status === "Gennemført").map(project => <article key={project.id} className="rounded-2xl bg-sand p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-extrabold">{project.name}</h3><span className="text-xs font-extrabold text-positive">100%</span></div><p className="mt-1 text-sm font-semibold text-muted">{project.location} · {project.grade}</p></article>)}</div> : <p className="mt-5 text-sm font-semibold text-muted">Dine gennemførte projekter kommer til at ligge her.</p>}</section>
+      <section className="rounded-[26px] border border-line bg-limestone p-6 shadow-soft"><div className="flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-[.15em] text-clay">Klatrehistorik</p><h2 className="mt-1 text-xl font-extrabold text-ink">Gennemførte projekter</h2></div><CheckCircle2 className="text-positive" /></div>{completedProjects.length ? <div className="mt-5 space-y-3">{completedProjects.map(project => <article key={project.id} className="rounded-2xl bg-sand p-4"><div className="flex items-center justify-between gap-3"><h3 className="font-extrabold">{project.name}</h3><span className="text-xs font-extrabold text-positive">100%</span></div><p className="mt-1 text-sm font-semibold text-muted">{project.location} · {project.grade}</p></article>)}</div> : <p className="mt-5 text-sm font-semibold text-muted">Dine gennemførte projekter kommer til at ligge her.</p>}</section>
     </div>
   </main>;
 }
