@@ -98,13 +98,13 @@ export async function getUserPosts(user: User) {
 }
 export async function createUserPost(
   user: User,
-  input: { description: string; media?: string; isVideo?: boolean },
+  input: { id?: string; description: string; media?: string; isVideo?: boolean },
 ) {
   const result = await db.executeQuery(
     `MATCH (u:User {id: $userId}) CREATE (u)-[:CREATED]->(p:Post { id: $id, description: $description, image: $image, imageAlt: $imageAlt, likes: 0, completed: false, isVideo: $isVideo, createdAt: datetime() }) RETURN p`,
     {
       userId: user.id,
-      id: randomBytes(12).toString("hex"),
+      id: input.id || randomBytes(12).toString("hex"),
       description: input.description.trim(),
       image: input.media || null,
       imageAlt: input.media ? "Medie vedhæftet opslag" : null,
@@ -113,6 +113,15 @@ export async function createUserPost(
     { database, routing: "WRITE" },
   );
   return publicPost(result.records[0].get("p").properties as PostNode, user);
+}
+
+export async function userOwnsPost(userId: string, postId: string) {
+  const result = await db.executeQuery(
+    "MATCH (:User {id: $userId})-[:CREATED]->(:Post {id: $postId}) RETURN count(*) > 0 AS owns",
+    { userId, postId },
+    { database },
+  );
+  return result.records[0]?.get("owns") === true;
 }
 export async function getUserProjects(userId: string) {
   const result = await db.executeQuery(
