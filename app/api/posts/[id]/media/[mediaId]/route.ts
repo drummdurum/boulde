@@ -12,7 +12,8 @@ export async function GET(_: Request, { params }: { params: { id: string; mediaI
     const media = await downloadPostMedia(params.id, params.mediaId);
     if (!media) return NextResponse.json({ error: "Mediet blev ikke fundet." }, { status: 404 });
     return new NextResponse(media.body, { headers: { "Content-Type": media.contentType, "Cache-Control": "private, max-age=300" } });
-  } catch {
+  } catch (error) {
+    console.error("Post media download failed", error);
     return NextResponse.json({ error: "Mediet kunne ikke hentes." }, { status: 502 });
   }
 }

@@ -23,11 +23,17 @@ NEO4J_PASSWORD=<neo4j-password>
 NEO4J_DATABASE=neo4j
 MAIL_SERVICE_URL=https://bouldemailservice-production.up.railway.app
 MAIL_SERVICE_API_KEY=<same-key-as-the-mail-service>
-MEDIA_SERVICE_URL=http://${{media.RAILWAY_PRIVATE_DOMAIN}}:${{media.PORT}}
+MEDIA_SERVICE_URL=https://pure-spontaneity-production.up.railway.app:8080
 MEDIA_SERVICE_API_KEY=${{shared.MEDIA_SERVICE_API_KEY}}
 ```
 
 `PORT` is injected by Railway and must not be hardcoded. The container listens on Railway's value automatically.
+
+`MEDIA_SERVICE_URL` is the media API base URL, including its port, without `/media` or `/health`. Set it in the deployed `web` service; changing this example does not change Railway variables. The same `MEDIA_SERVICE_API_KEY` must be configured in both services. Private networking can alternatively use `http://${{media.RAILWAY_PRIVATE_DOMAIN}}:${{media.PORT}}`.
+
+An HTML response during upload indicates that the request did not receive the expected media API JSON response. Check the URL and port: `/health` should return JSON identifying `boulde-media-service`.
+
+Old `/api/uploads/posts/...` links refer to files in the web container's `public/uploads` directory. Files lost during a redeploy cannot be restored by changing the media service URL; they must be uploaded again. New uploads use the media service and bucket.
 
 ## Neo4j
 

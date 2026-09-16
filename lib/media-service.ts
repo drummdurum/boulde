@@ -1,7 +1,7 @@
 import "server-only";
 import type { ProjectMedia } from "@/types";
 
-const serviceUrl = process.env.MEDIA_SERVICE_URL || "http://localhost:3102";
+const serviceUrl = (process.env.MEDIA_SERVICE_URL || "http://localhost:3102").trim().replace(/\/+$/, "");
 const apiKey = process.env.MEDIA_SERVICE_API_KEY || "local-media-development-key";
 
 type ServiceMedia = Omit<ProjectMedia, "projectId"> & { resourceId: string };
@@ -22,7 +22,17 @@ async function mediaRequest(path: string, init?: RequestInit) {
     signal: init?.signal ?? AbortSignal.timeout(5_000),
     cache: "no-store"
   });
-  const body = response.status === 204 ? undefined : await response.json();
+  if (response.status === 204) return undefined;
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    throw new Error(`Media-servicen svarede med HTTP ${response.status} og ${contentType || "ukendt indholdstype"} på ${path}. Kontrollér MEDIA_SERVICE_URL, inklusive porten; endpointet skal returnere JSON.`);
+  }
+  let body;
+  try {
+    body = await response.json();
+  } catch {
+    throw new Error(`Media-servicen returnerede ugyldig JSON (HTTP ${response.status}) på ${path}.`);
+  }
   if (!response.ok) throw new Error(body?.error || `Media-servicen svarede med HTTP ${response.status}.`);
   return body;
 }
