@@ -1,7 +1,5 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { randomBytes } from "node:crypto";
 import { SESSION_COOKIE, userFromSession } from "@/lib/auth";
 import {
@@ -9,10 +7,13 @@ import {
   getUserProjects,
   setProjectVisibility,
   updateUserProject,
+  userOwnsProject,
 } from "@/lib/user-data";
 import type { ClimbingColor, ClimbingGrade, ProjectStatus } from "@/types";
 import { climbingColors, climbingGrades } from "@/lib/grading";
 import { placeById } from "@/lib/places";
+
+import { uploadProjectCover } from "@/lib/media-service";
 
 const grades = new Set(climbingGrades);
 const colors = new Set(climbingColors);
@@ -72,9 +73,10 @@ export async function POST(request: Request) {
   const normalizedProgress = status === "Gennemført" ? 100 : progress;
   const normalizedStatus =
     normalizedProgress === 100 ? "Gennemført" : (status as ProjectStatus);
+  const projectId = randomBytes(12).toString("hex");
   let image: string | undefined;
   if (imageFile instanceof Blob && imageFile.size > 0) {
-    if (!imageFile.type.startsWith("image/"))
+    if (!["image/jpeg", "image/png", "image/webp"].includes(imageFile.type))
       return NextResponse.json(
         { error: "Vælg en gyldig billedfil." },
         { status: 400 },
@@ -84,30 +86,19 @@ export async function POST(request: Request) {
         { error: "Billedet må højst fylde 8 MB." },
         { status: 400 },
       );
-    const extension =
-      imageFile.type
-        .split("/")[1]
-        ?.replace("jpeg", "jpg")
-        .replace(/[^a-z0-9]/gi, "") || "jpg";
-    const filename = `${randomBytes(12).toString("hex")}.${extension}`;
-    const uploadDirectory = path.join(
-      process.cwd(),
-      "public",
-      "uploads",
-      "projects",
-    );
-    await mkdir(uploadDirectory, { recursive: true });
-    await writeFile(
-      path.join(uploadDirectory, filename),
-      Buffer.from(await imageFile.arrayBuffer()),
-    );
-    image = `/api/uploads/projects/${filename}`;
+    try {
+      image = await uploadProjectCover(user.id, projectId, imageFile);
+    } catch (error) {
+      console.error("Project cover upload failed", error);
+      return NextResponse.json({ error: "Billedet kunne ikke gemmes i medielageret." }, { status: 503 });
+    }
   }
   const visible =
     body.get("visible") === "on" || body.get("visible") === "true";
   return NextResponse.json(
     {
       project: await createUserProject(user.id, {
+        id: projectId,
         name,
         place,
         grade: grade as ClimbingGrade,
@@ -163,31 +154,21 @@ export async function PATCH(request: Request) {
     let image: string | undefined;
     if (imageFile instanceof Blob && imageFile.size > 0) {
       if (
-        !imageFile.type.startsWith("image/") ||
+        !["image/jpeg", "image/png", "image/webp"].includes(imageFile.type) ||
         imageFile.size > 8 * 1024 * 1024
       )
         return NextResponse.json(
           { error: "Billedet skal være en billedfil på højst 8 MB." },
           { status: 400 },
         );
-      const extension =
-        imageFile.type
-          .split("/")[1]
-          ?.replace("jpeg", "jpg")
-          .replace(/[^a-z0-9]/gi, "") || "jpg";
-      const filename = `${randomBytes(12).toString("hex")}.${extension}`;
-      const uploadDirectory = path.join(
-        process.cwd(),
-        "public",
-        "uploads",
-        "projects",
-      );
-      await mkdir(uploadDirectory, { recursive: true });
-      await writeFile(
-        path.join(uploadDirectory, filename),
-        Buffer.from(await imageFile.arrayBuffer()),
-      );
-      image = `/api/uploads/projects/${filename}`;
+      if (!await userOwnsProject(user.id, id))
+        return NextResponse.json({ error: "Projektet blev ikke fundet." }, { status: 404 });
+      try {
+        image = await uploadProjectCover(user.id, id, imageFile);
+      } catch (error) {
+        console.error("Project cover upload failed", error);
+        return NextResponse.json({ error: "Billedet kunne ikke gemmes i medielageret." }, { status: 503 });
+      }
     }
     const project = await updateUserProject(user.id, id, {
       progress: normalizedProgress,

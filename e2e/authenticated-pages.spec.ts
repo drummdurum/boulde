@@ -1,7 +1,5 @@
 import { expect, test } from "@playwright/test";
 import neo4j from "neo4j-driver";
-import { unlink } from "node:fs/promises";
-import path from "node:path";
 
 const runId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 const user = {
@@ -28,7 +26,6 @@ const mediaServiceUrl =
 const mediaServiceApiKey =
   process.env.MEDIA_SERVICE_API_KEY || "local-media-development-key";
 const uploadedMediaIds: string[] = [];
-const uploadedProjectImages: string[] = [];
 
 test.afterAll(async () => {
   const driver = neo4j.driver(
@@ -63,13 +60,6 @@ test.afterAll(async () => {
           method: "DELETE",
           headers: { "x-api-key": mediaServiceApiKey },
         }),
-      ),
-    );
-    await Promise.all(
-      uploadedProjectImages.map((image) =>
-        unlink(path.join(process.cwd(), "public", image.replace(/^\/api\//, ""))).catch(
-          () => undefined,
-        ),
       ),
     );
   }
@@ -259,9 +249,9 @@ test("opretter et projekt med billede og uploader en video til samme projekt", a
     status: "Arbejder på den",
   });
   expect(createdProject?.image).toMatch(
-    /^\/api\/uploads\/projects\/[a-f0-9]+\.png$/,
+    /^\/api\/projects\/[a-f0-9]{24}\/media\/[a-f0-9]{24}$/,
   );
-  uploadedProjectImages.push(createdProject.image);
+  uploadedMediaIds.push(createdProject.image.split("/").pop());
   const projectImage = await page.request.get(createdProject.image);
   expect(projectImage.ok()).toBeTruthy();
   expect(await projectImage.body()).toEqual(imageBytes);
@@ -301,7 +291,7 @@ test("opretter et projekt med billede og uploader en video til samme projekt", a
     note: "Har fat i slutgrebet",
   });
   expect(updatedProject.image).not.toBe(createdProject.image);
-  uploadedProjectImages.push(updatedProject.image);
+  uploadedMediaIds.push(updatedProject.image.split("/").pop());
   expect(await (await page.request.get(updatedProject.image)).body()).toEqual(
     replacementImageBytes,
   );
@@ -368,15 +358,15 @@ test("opretter et projekt med billede og uploader en video til samme projekt", a
     );
     expect(mediaResponse.ok()).toBeTruthy();
     const media = (await mediaResponse.json()).media;
-    expect(media).toHaveLength(1);
-    expect(media[0].id).toBe(uploadedMediaId);
-    expect(media[0]).toMatchObject({
+    expect(media).toHaveLength(3);
+    const uploadedVideo = media.find((item: { id: string }) => item.id === uploadedMediaId);
+    expect(uploadedVideo).toMatchObject({
       type: "video",
       contentType: "video/mp4",
       note: "Test af objektlager",
       size: videoBytes.length,
     });
-    const download = await page.request.get(media[0].url);
+    const download = await page.request.get(uploadedVideo.url);
     expect(download.ok()).toBeTruthy();
     expect(await download.body()).toEqual(videoBytes);
   } finally {

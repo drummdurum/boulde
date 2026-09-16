@@ -26,8 +26,8 @@ COPY --from=build /app/.next/static ./.next/static
 COPY --from=build /app/public ./public
 COPY --from=build /app/database ./database
 COPY --from=build /app/scripts ./scripts
-RUN mkdir -p /app/public/uploads/projects /app/public/uploads/posts /app/.next/cache \
-    && chown -R node:node /app/public/uploads /app/.next/cache
+RUN mkdir -p /app/.next/cache \
+    && chown -R node:node /app/.next/cache
 USER node
 EXPOSE 3000
 CMD ["/bin/sh", "-c", "node scripts/migrate.mjs && node scripts/seed-locations.mjs && exec node server.js"]

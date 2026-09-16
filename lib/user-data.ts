@@ -138,6 +138,7 @@ export async function getUserProjects(userId: string) {
 export async function createUserProject(
   userId: string,
   input: {
+    id?: string;
     name: string;
     place: {
       id: string;
@@ -162,7 +163,7 @@ export async function createUserProject(
     `MATCH (u:User {id: $userId}) MERGE (place:Place {id: $placeId}) SET place.slug = $placeSlug, place.name = $location, place.street = $street, place.postalCode = $postalCode, place.city = $city, place.image = $placeImage CREATE (u)-[:WORKS_ON]->(p:Project { id: $id, name: $name, location: $location, placeSlug: $placeSlug, grade: $grade, colorGrade: $colorGrade, note: $note, image: $image, visible: $visible, attempts: 0, lastAttempt: 'Ikke forsøgt endnu', status: $status, progress: $progress, createdAt: datetime() })-[:AT_PLACE]->(place) RETURN p`,
     {
       userId,
-      id: randomBytes(12).toString("hex"),
+      id: input.id || randomBytes(12).toString("hex"),
       name: input.name.trim(),
       placeId: input.place.id,
       placeSlug: input.place.slug,

@@ -6,6 +6,8 @@ const mocks = vi.hoisted(() => ({
   getUserProjects: vi.fn(),
   createUserProject: vi.fn(),
   placeById: vi.fn(),
+  userOwnsProject: vi.fn(),
+  uploadProjectCover: vi.fn(),
 }));
 vi.mock("next/headers", () => ({
   cookies: () => ({ get: () => ({ value: "session" }) }),
@@ -16,8 +18,56 @@ vi.mock("@/lib/auth", () => ({
 }));
 vi.mock("@/lib/user-data", () => mocks);
 vi.mock("@/lib/places", () => ({ placeById: mocks.placeById }));
+vi.mock("@/lib/media-service", () => ({ uploadProjectCover: mocks.uploadProjectCover }));
 
 import { PATCH, POST } from "./route";
+
+describe("projektets hovedbillede", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.placeById.mockReturnValue({ id: "place-1", name: "Hallen" });
+    mocks.userOwnsProject.mockResolvedValue(true);
+    mocks.uploadProjectCover.mockImplementation(async (_owner, id) => `/api/projects/${id}/media/media-1`);
+    mocks.createUserProject.mockImplementation(async (_owner, input) => input);
+    mocks.updateUserProject.mockImplementation(async (_owner, id, input) => ({ id, ...input }));
+  });
+  function imageForm() {
+    const form = new FormData();
+    form.set("name", "Projektet");
+    form.set("placeId", "place-1");
+    form.set("id", "project-1");
+    form.set("grade", "6B");
+    form.set("progress", "0");
+    form.set("status", "Ny");
+    form.set("image", new Blob([new Uint8Array([1, 2, 3])], { type: "image/png" }), "projekt.png");
+    return { formData: async () => form, headers: new Headers({ "content-type": "multipart/form-data" }) } as Request;
+  }
+  it("sender hovedbilledet til media-servicen ved oprettelse", async () => {
+    const response = await POST(imageForm());
+    expect(response.status).toBe(201);
+    const [, projectId, file] = mocks.uploadProjectCover.mock.calls[0];
+    expect(file).toBeInstanceOf(Blob);
+    expect(mocks.createUserProject).toHaveBeenCalledWith("user-1", expect.objectContaining({ id: projectId, image: `/api/projects/${projectId}/media/media-1` }));
+  });
+  it("sender et nyt hovedbillede til media-servicen ved opdatering", async () => {
+    const response = await PATCH(imageForm());
+    expect(response.status).toBe(200);
+    expect(mocks.userOwnsProject).toHaveBeenCalledWith("user-1", "project-1");
+    expect(mocks.uploadProjectCover).toHaveBeenCalledWith("user-1", "project-1", expect.any(Blob));
+    expect(mocks.updateUserProject).toHaveBeenCalledWith("user-1", "project-1", expect.objectContaining({ image: "/api/projects/project-1/media/media-1" }));
+  });
+  it("uploader ikke et billede til en anden brugers projekt", async () => {
+    mocks.userOwnsProject.mockResolvedValue(false);
+    expect((await PATCH(imageForm())).status).toBe(404);
+    expect(mocks.uploadProjectCover).not.toHaveBeenCalled();
+    expect(mocks.updateUserProject).not.toHaveBeenCalled();
+  });
+  it("gemmer ikke projektet hvis medie-uploaden fejler", async () => {
+    mocks.uploadProjectCover.mockRejectedValueOnce(new Error("storage unavailable"));
+    expect((await POST(imageForm())).status).toBe(503);
+    expect(mocks.createUserProject).not.toHaveBeenCalled();
+  });
+});
 
 describe("POST /api/projects", () => {
   beforeEach(() => {

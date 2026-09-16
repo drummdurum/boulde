@@ -159,7 +159,7 @@ describe("ProjectsPage", () => {
           JSON.stringify({
             project: {
               ...project,
-              image: "/api/uploads/projects/bbbbbbbbbbbbbbbbbbbbbbbb.png",
+              image: "/api/projects/project-1/media/bbbbbbbbbbbbbbbbbbbbbbbb",
               progress: 65,
               status: "Tæt på",
               note: "Har fat i slutgrebet",
@@ -173,7 +173,7 @@ describe("ProjectsPage", () => {
         initialProjects={[
           {
             ...project,
-            image: "/api/uploads/projects/aaaaaaaaaaaaaaaaaaaaaaaa.png",
+            image: "/api/projects/project-1/media/aaaaaaaaaaaaaaaaaaaaaaaa",
           },
         ]}
       />,
@@ -182,7 +182,7 @@ describe("ProjectsPage", () => {
       screen.getAllByAltText("Projektet Testlinjen ved Kjugekull")[0],
     ).toHaveAttribute(
       "src",
-      "/api/uploads/projects/aaaaaaaaaaaaaaaaaaaaaaaa.png",
+      "/api/projects/project-1/media/aaaaaaaaaaaaaaaaaaaaaaaa",
     );
     await user.click(
       screen.getAllByRole("button", { name: "Rediger projekt" })[0],

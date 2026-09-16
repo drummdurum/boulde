@@ -59,6 +59,14 @@ export async function uploadProjectMediaContent(mediaId: string, file: Blob) {
   });
 }
 
+export async function uploadProjectCover(ownerId: string, projectId: string, file: Blob) {
+  const prepared = await prepareProjectMedia({ ownerId, projectId, contentType: file.type, size: file.size });
+  await uploadProjectMediaContent(prepared.mediaId, file);
+  const media = await completeProjectMedia(prepared.mediaId, file.size);
+  if (media.projectId !== projectId) throw new Error("Mediet tilhører ikke projektet.");
+  return `/api/projects/${encodeURIComponent(projectId)}/media/${encodeURIComponent(media.id)}`;
+}
+
 export const uploadPostMediaContent = uploadProjectMediaContent;
 
 export async function completePostMedia(mediaId: string, size: number) {
