@@ -1,7 +1,8 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { ClimbingProject, User } from "@/types";
 import { UserProfilePage } from "./UserProfilePage";
+vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
 const user: User = { id: "user-1", name: "Test Klatrer", username: "test", initials: "TK", location: "Aarhus" };
 const project = (id: string, grade: ClimbingProject["grade"], location: string, status: ClimbingProject["status"], placeSlug?: string, colorGrade?: ClimbingProject["colorGrade"]): ClimbingProject => ({

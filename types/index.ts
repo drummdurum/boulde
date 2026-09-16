@@ -4,7 +4,7 @@ export type ClimbingType = "Boulder" | "Sportsklatring" | "Indendørs";
 export type ProjectStatus = "Ny" | "Arbejder på den" | "Tæt på" | "Gennemført";
 
 export interface User {
-  id: string; name: string; username: string; initials: string; location: string; avatar?: string;
+  id: string; name: string; username: string; initials: string; location: string; avatar?: string; coverImage?: string; bio?: string;
 }
 export interface Comment {
   id: string; author: User; body: string; createdAt: string;
