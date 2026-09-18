@@ -44,7 +44,16 @@ export function UserProfilePage({ user: initialUser, createdAt, posts, projects,
       <section aria-labelledby="profile-name" className="overflow-hidden rounded-[28px] border border-line bg-limestone shadow-soft">
         <div className="relative h-36 overflow-hidden bg-pine sm:h-48"><Image src={user.coverImage || "/images/nordic-boulder.png"} unoptimized={Boolean(user.coverImage)} alt={user.coverImage ? `${user.name}s baggrundsbillede` : "Granitblokke i en nordisk skov"} fill priority className="object-cover object-[center_42%] opacity-70" /><div className="absolute inset-0 bg-gradient-to-r from-pine/65 to-transparent" /></div>
         <div className="px-5 pb-6 sm:px-8 sm:pb-8">
-          <div className="relative z-10 -mt-10 flex flex-col gap-4 sm:-mt-12 sm:flex-row sm:items-end sm:justify-between"><div className="flex items-end gap-4"><span className="rounded-full bg-limestone p-1.5"><Avatar user={user} size="lg" /></span><div className="pb-1"><h2 id="profile-name" className="text-2xl font-extrabold tracking-tight text-ink">{user.name}</h2><p className="text-sm font-semibold text-muted">@{user.username}</p></div></div><Button variant="outline" onClick={() => setEditing(true)} className="relative z-20 self-start sm:self-auto"><Pencil size={16} />Redigér profil</Button></div>
+          <div className="relative z-10 -mt-10 flex flex-col gap-4 sm:-mt-12 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <span className="inline-flex rounded-full bg-limestone p-1.5"><Avatar user={user} size="lg" /></span>
+              <div className="mt-3">
+                <h2 id="profile-name" className="break-words text-2xl font-extrabold tracking-tight text-ink">{user.name}</h2>
+                <p className="break-words text-sm font-semibold text-muted">@{user.username}</p>
+              </div>
+            </div>
+            <Button variant="outline" onClick={() => setEditing(true)} className="relative z-20 shrink-0 self-start sm:self-auto"><Pencil size={16} />Redigér profil</Button>
+          </div>
           <p className="mt-5 max-w-2xl text-sm font-semibold leading-6 text-muted">{user.bio || "Fortæl lidt om dig selv ved at vælge Redigér profil."}</p>
           <div className="mt-3 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-muted">{user.location && <span className="flex items-center gap-1.5"><MapPin size={14} />{user.location}</span>}<span className="flex items-center gap-1.5 capitalize"><CalendarDays size={14} />Medlem siden {memberSince}</span></div>
           <div className="mt-6 flex gap-6 border-t border-line pt-5 text-sm"><span><strong className="block text-lg text-ink">{followCounts.followers}</strong><span className="text-muted">Følgere</span></span><span><strong className="block text-lg text-ink">{followCounts.following}</strong><span className="text-muted">Følger</span></span></div>

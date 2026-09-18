@@ -70,6 +70,29 @@ describe("projektets hovedbillede", () => {
 });
 
 describe("POST /api/projects", () => {
+  it("validerer placering mod hallens kort før projektet gemmes", async () => {
+    mocks.placeById.mockReturnValue({ id: "gym-6", slug: "boulders-kbh-sydhavn" });
+    mocks.createUserProject.mockImplementation(async (_owner, input) => input);
+    const form = new FormData();
+    for (const [key, value] of Object.entries({ name: "Skibsprojekt", placeId: "gym-6", grade: "6B", progress: "0", status: "Ny", colorGrade: "Grøn", mapSlot: "1", mapArea: "skibet-left-upper", mapX: "42.3", mapY: "57.8" })) form.set(key, value);
+    const request = () => ({ formData: async () => form }) as Request;
+    expect((await POST(request())).status).toBe(201);
+    expect(mocks.createUserProject).toHaveBeenCalledWith("user-1", expect.objectContaining({ mapPlacement: { areaId: "skibet-left-upper", x: 42.3, y: 57.8 } }));
+    mocks.createUserProject.mockClear();
+    for (const badX of ["", "101", "NaN", "Infinity"]) {
+      form.set("mapX", badX);
+      expect((await POST(request())).status).toBe(400);
+    }
+    form.set("mapX", "42.3");
+    for (const badSlot of ["", "0", "3"]) {
+      form.set("mapSlot", badSlot);
+      expect((await POST(request())).status).toBe(400);
+    }
+    form.set("mapSlot", "1");
+    mocks.placeById.mockReturnValue({ id: "gym-1", slug: "boulders-aarhus-city" });
+    expect((await POST(request())).status).toBe(400);
+    expect(mocks.createUserProject).not.toHaveBeenCalled();
+  });
   beforeEach(() => {
     vi.clearAllMocks();
   });

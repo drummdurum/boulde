@@ -20,6 +20,10 @@ export interface ClimbingProject {
   colorGrade?: ClimbingColor;
   lastAttempt: string; note: string; status: ProjectStatus; progress: number; visible: boolean;
   image?: string; placeSlug?: string;
+  mapPlacement?: { areaId: string; x: number; y: number };
+  removedAt?: string;
+  mapProblemId?: string;
+  mapSlot?: 1 | 2;
   owner?: Pick<User, "id" | "name" | "username" | "initials">;
 }
 export interface ProjectMedia {
@@ -41,6 +45,7 @@ export interface ClimbingLocation {
   mapsUrl: string; instagramUrl?: string; facebookUrl?: string; email?: string; phone?: string;
 }
 export interface ClimbingSession {
+  projects?: Array<Pick<ClimbingProject, "id" | "name" | "grade" | "colorGrade"> & { ownerId: string; ownerName: string }>;
   id: string; shareId: string; title: string; date: string; time: string; location: string;
   project?: Pick<ClimbingProject, "id" | "name" | "grade" | "colorGrade" | "visible">;
   host: Pick<User, "id" | "name" | "initials">;

@@ -14,13 +14,20 @@ import {
 } from "lucide-react";
 import type { ClimbingSession, SessionInvitee } from "@/types";
 import { Button } from "./ui/Button";
+import { SessionPlanning } from "./SessionPlanning";
+import type { ClimbingProject } from "@/types";
+import type { Place } from "@/lib/places";
 
 export function SharedSessionPage({
   initialSession,
   connections = [],
+  projects = [],
+  locations = [],
 }: {
   initialSession: ClimbingSession;
   connections?: SessionInvitee[];
+  projects?: ClimbingProject[];
+  locations?: Place[];
 }) {
   const [session, setSession] = useState(initialSession);
   const [name, setName] = useState("");
@@ -172,6 +179,7 @@ export function SharedSessionPage({
             </div>
           </header>
           <div className="p-6 sm:p-9">
+            <SessionPlanning session={session} projects={projects} locations={locations} onUpdated={setSession} />
             <div className="grid gap-3 sm:grid-cols-2">
               <Info
                 icon={CalendarDays}

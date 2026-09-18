@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { ProjectsPage } from "./ProjectsPage";
@@ -17,6 +17,33 @@ const project = {
 };
 
 describe("ProjectsPage", () => {
+  it("vælger hallens kort, sender placeringen og rydder den ved skift af hal", async () => {
+    const request = vi.fn().mockResolvedValue({ ok: true, json: async () => ({ media: [], problems: [] }), text: async () => JSON.stringify({ project: { ...project, id: "created-project" } }) });
+    vi.stubGlobal("fetch", request);
+    const user = userEvent.setup();
+    render(<ProjectsPage initialProjects={[project]} />);
+    await user.click(screen.getAllByRole("button", { name: "Nyt projekt" })[0]);
+    const hall = screen.getByLabelText(/Sted/);
+    await user.selectOptions(hall, "gym-6");
+    const walls = screen.getByRole("group", { name: "Vælg væg" });
+    await user.click(within(walls).getByRole("button", { name: "Skibet · venstre øverst" }));
+    expect(screen.getByLabelText("Projektets placering")).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/Problem på væggen/), "1");
+    await user.type(screen.getByLabelText("Projektnavn"), "Ny linje");
+    await user.click(screen.getByRole("button", { name: "Opret projekt" }));
+    const sent = request.mock.calls.find(call => call[1]?.method === "POST")![1].body as FormData;
+    expect(sent.get("placeId")).toBe("gym-6");
+    expect(sent.get("mapArea")).toBe("skibet-left-upper");
+    expect(Number(sent.get("mapX"))).toBeCloseTo(387 / 1072 * 100);
+    await user.click(screen.getAllByRole("button", { name: "Nyt projekt" })[0]);
+    await user.selectOptions(screen.getByLabelText(/Sted/), "gym-6");
+    await user.click(within(screen.getByRole("group", { name: "Vælg væg" })).getByRole("button", { name: "Skibet · venstre øverst" }));
+    await user.selectOptions(screen.getByLabelText(/Sted/), "gym-1");
+    expect(screen.queryByLabelText("Projektets placering")).not.toBeInTheDocument();
+    expect(screen.getByText(/Der er endnu ikke et vægkort/)).toBeInTheDocument();
+    await user.selectOptions(screen.getByLabelText(/Sted/), "gym-6");
+    expect(screen.queryByLabelText("Projektets placering")).not.toBeInTheDocument();
+  });
   afterEach(() => {
     cleanup();
     vi.unstubAllGlobals();

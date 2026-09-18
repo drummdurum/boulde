@@ -27,12 +27,14 @@ import {
   Video,
   X,
 } from "lucide-react";
-import type { ClimbingProject, ProjectStatus } from "@/types";
+import type { ClimbingColor, ClimbingProject, ProjectStatus } from "@/types";
 import { places as defaultPlaces, type Place } from "@/lib/places";
 import { climbingColors, climbingColorStyles, climbingGrades } from "@/lib/grading";
 import { Badge } from "./ui/Badge";
 import { Button } from "./ui/Button";
 import { MediaUploadModal, ProjectMediaPanel } from "./ProjectMedia";
+import { GymMap } from "./gym-map/GymMap";
+import { gymMapForPlace, type MapPlacement, type MapProblemSummary } from "@/lib/gym-maps";
 
 const filters: Array<"Alle" | ProjectStatus> = [
   "Alle",
@@ -338,6 +340,23 @@ function CreateProjectModal({
   const [imageFile, setImageFile] = useState<File>();
   const [progress, setProgress] = useState(0);
   const [status, setStatus] = useState<ProjectStatus>("Ny");
+  const [placeId, setPlaceId] = useState("");
+  const [mapPlacement, setMapPlacement] = useState<MapPlacement>();
+  const [mapSlot, setMapSlot] = useState("");
+  const [colorGrade, setColorGrade] = useState<ClimbingColor>("Grøn");
+  const [knownProblems, setKnownProblems] = useState<MapProblemSummary[]>([]);
+  const map = gymMapForPlace(places.find(place => place.id === placeId)?.slug);
+  const hasMap = Boolean(map);
+  useEffect(() => {
+    setKnownProblems([]);
+    if (!hasMap || !open) return;
+    const controller = new AbortController();
+    fetch(`/api/map-problems?placeId=${encodeURIComponent(placeId)}`, { signal: controller.signal })
+      .then(async response => { if (!response.ok) throw new Error("Kortets problemer kunne ikke hentes."); return response.json(); })
+      .then(result => { if (!controller.signal.aborted) setKnownProblems(result.problems ?? []); })
+      .catch(() => { if (!controller.signal.aborted) setError("Eksisterende placeringer kunne ikke hentes. Prøv at vælge hallen igen."); });
+    return () => controller.abort();
+  }, [placeId, open, hasMap]);
   const imagePreview = useMemo(
     () => (imageFile ? URL.createObjectURL(imageFile) : ""),
     [imageFile],
@@ -353,6 +372,10 @@ function CreateProjectModal({
       setImageFile(undefined);
       setProgress(0);
       setStatus("Ny");
+      setPlaceId("");
+      setMapPlacement(undefined);
+      setMapSlot("");
+      setColorGrade("Grøn");
       setError("");
     }
   }, [open]);
@@ -368,6 +391,12 @@ function CreateProjectModal({
     setError("");
     try {
       const values = new FormData(event.currentTarget);
+      if (mapPlacement) {
+        values.set("mapArea", mapPlacement.areaId);
+        values.set("mapX", String(mapPlacement.x));
+        values.set("mapY", String(mapPlacement.y));
+        values.set("mapSlot", mapSlot);
+      }
       if (imageFile) values.set("image", imageFile);
       const response = await fetch("/api/projects", {
         method: "POST",
@@ -494,7 +523,8 @@ function CreateProjectModal({
               name="placeId"
               required
               className={inputClass}
-              defaultValue=""
+              value={placeId}
+              onChange={event => { setPlaceId(event.target.value); setMapPlacement(undefined); setMapSlot(""); }}
             >
               <option value="" disabled>
                 Vælg et klatrested…
@@ -515,6 +545,8 @@ function CreateProjectModal({
               </Link>
             </span>
           </label>
+          {map ? <GymMap key={placeId} name={map.name} areas={map.areas} context={map.context} resolveSection={map.resolveSection} placement={mapPlacement} onPlacementChange={next => { setMapPlacement(next); setMapSlot(""); }} />
+            : placeId && <p className="rounded-2xl bg-sand p-4 text-sm text-muted">Der er endnu ikke et vægkort til denne hal. Du kan stadig oprette projektet.</p>}
           <label className="block text-sm font-extrabold">
             Grade
             <select name="grade" className={inputClass}>
@@ -527,10 +559,23 @@ function CreateProjectModal({
           </label>
           <label className="block text-sm font-extrabold">
             Boulders-farve
-            <select name="colorGrade" className={inputClass}>
+            <select name="colorGrade" value={colorGrade} onChange={event => { setColorGrade(event.target.value as ClimbingColor); setMapSlot(""); }} className={inputClass}>
               {climbingColors.map(color => <option key={color}>{color}</option>)}
             </select>
+
           </label>
+          {mapPlacement && <label className="block text-sm font-extrabold">
+            Problem på væggen
+            <select required name="mapSlot" value={mapSlot} className={inputClass} onChange={event => {
+              setMapSlot(event.target.value);
+              const existing = knownProblems.find(problem => problem.areaId === mapPlacement.areaId && problem.colorGrade === colorGrade && String(problem.slot) === event.target.value);
+              if (existing) setMapPlacement({ areaId: existing.areaId, x: existing.x, y: existing.y });
+            }}>
+              <option value="" disabled>Vælg problem 1 eller 2…</option>
+              {[1, 2].map(slot => <option key={slot} value={slot}>{colorGrade} {slot}{knownProblems.some(problem => problem.areaId === mapPlacement.areaId && problem.colorGrade === colorGrade && problem.slot === slot) ? " · eksisterende problem" : " · ny placering"}</option>)}
+            </select>
+            <span className="mt-2 block text-xs font-semibold text-muted">Højst to problemer af hver farve pr. sektion. Flere brugere kan arbejde på samme problem; dets placering bevares.</span>
+          </label>}
           <label className="block text-sm font-extrabold">
             Fremskridt: <output>{progress}%</output>
             <input
@@ -716,9 +761,10 @@ function EditProjectModal({
           </label>
           <label className="block text-sm font-extrabold">
             Boulders-farve
-            <select name="colorGrade" defaultValue={project.colorGrade || "Grøn"} className="mt-2 h-11 w-full rounded-2xl border border-line bg-sand px-4 font-normal">
+            <select disabled={Boolean(project.mapProblemId)} name="colorGrade" defaultValue={project.colorGrade || "Grøn"} className="mt-2 h-11 w-full rounded-2xl border border-line bg-sand px-4 font-normal">
               {climbingColors.map(color => <option key={color}>{color}</option>)}
             </select>
+            {project.mapProblemId && <span className="mt-2 block text-xs text-muted">Farven følger det fælles problem på kortet.</span>}
           </label>
           <label className="block text-sm font-extrabold">
             Fremskridt: <output>{progress}%</output>
@@ -915,6 +961,7 @@ function ProjectDetail({
         </div>
       </div>
       <div className="p-5 sm:p-7">
+        {project.mapPlacement && gymMapForPlace(project.placeSlug) && <GymMap key={project.id} name={project.location} areas={gymMapForPlace(project.placeSlug)!.areas} context={gymMapForPlace(project.placeSlug)!.context} resolveSection={gymMapForPlace(project.placeSlug)!.resolveSection} placement={project.mapPlacement} />}
         <div className="grid gap-5 sm:grid-cols-[1fr_auto] sm:items-center">
           <div>
             <div className="flex items-center justify-between text-xs font-bold">

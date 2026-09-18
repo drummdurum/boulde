@@ -12,6 +12,7 @@ import {
 import type { ClimbingColor, ClimbingGrade, ProjectStatus } from "@/types";
 import { climbingColors, climbingGrades } from "@/lib/grading";
 import { placeById } from "@/lib/places";
+import { validMapPlacement, type MapPlacement } from "@/lib/gym-maps";
 
 import { uploadProjectCover } from "@/lib/media-service";
 
@@ -71,6 +72,20 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   const normalizedProgress = status === "Gennemført" ? 100 : progress;
+  let mapPlacement: MapPlacement | undefined;
+  let mapSlot: 1 | 2 | undefined;
+  const mapArea = body.get("mapArea"), mapX = body.get("mapX"), mapY = body.get("mapY");
+  if (mapArea !== null || mapX !== null || mapY !== null) {
+    if (typeof mapArea !== "string" || typeof mapX !== "string" || !mapX.trim() || typeof mapY !== "string" || !mapY.trim())
+      return NextResponse.json({ error: "Vælg en gyldig placering på kortet." }, { status: 400 });
+    mapPlacement = { areaId: mapArea, x: Number(mapX), y: Number(mapY) };
+    if (!validMapPlacement(place.slug, mapPlacement))
+      return NextResponse.json({ error: "Placeringen passer ikke til den valgte hal." }, { status: 400 });
+    const slot = body.get("mapSlot");
+    if ((slot !== "1" && slot !== "2") || typeof colorGrade !== "string")
+      return NextResponse.json({ error: "Vælg farve og problem 1 eller 2. Der er højst to af hver farve pr. sektion." }, { status: 400 });
+    mapSlot = Number(slot) as 1 | 2;
+  }
   const normalizedStatus =
     normalizedProgress === 100 ? "Gennemført" : (status as ProjectStatus);
   const projectId = randomBytes(12).toString("hex");
@@ -108,6 +123,8 @@ export async function POST(request: Request) {
         visible,
         progress: normalizedProgress,
         status: normalizedStatus,
+        mapPlacement,
+        mapSlot,
       }),
     },
     { status: 201 },

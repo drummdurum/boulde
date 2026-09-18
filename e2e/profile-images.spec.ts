@@ -58,7 +58,7 @@ test("tilføjer og udskifter profilbillede og baggrundsbillede", async ({ page }
     }
   } finally {
     try {
-      for (const id of mediaIds) {
+      for (const id of Array.from(mediaIds)) {
         const deletion = await fetch(`${(process.env.MEDIA_SERVICE_URL || "http://localhost:3102").replace(/\/+$/, "")}/media/${encodeURIComponent(id)}`, { method: "DELETE", headers: { "x-api-key": process.env.MEDIA_SERVICE_API_KEY || "local-media-development-key" }, signal: AbortSignal.timeout(10_000) });
         expect([204, 404]).toContain(deletion.status);
       }

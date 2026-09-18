@@ -40,6 +40,12 @@ type ProjectNode = {
   visible?: boolean;
   image?: string;
   placeSlug?: string;
+  mapArea?: string;
+  mapX?: number;
+  mapY?: number;
+  mapProblemId?: string;
+  mapSlot?: number;
+  removedAt?: string;
 };
 type SessionNode = {
   id: string;
@@ -86,6 +92,11 @@ function publicProject(row: ProjectNode): ClimbingProject {
     visible: row.visible === true,
     image: row.image,
     placeSlug: row.placeSlug,
+    mapPlacement: row.mapArea && row.mapX != null && row.mapY != null
+      ? { areaId: row.mapArea, x: neo4jNumber(row.mapX), y: neo4jNumber(row.mapY) } : undefined,
+    mapProblemId: row.mapProblemId,
+    mapSlot: row.mapSlot != null ? neo4jNumber(row.mapSlot) as 1 | 2 : undefined,
+    removedAt: row.removedAt?.toString(),
   };
 }
 export async function getUserPosts(user: User) {
@@ -157,10 +168,24 @@ export async function createUserProject(
     visible?: boolean;
     progress?: number;
     status?: ClimbingProject["status"];
+    mapPlacement?: ClimbingProject["mapPlacement"];
+    mapSlot?: 1 | 2;
   },
 ) {
+  if (input.mapPlacement && (!input.colorGrade || ![1, 2].includes(input.mapSlot ?? 0))) throw new Error("Vælg farve og problem 1 eller 2 på væggen.");
+  const mapped = Boolean(input.mapPlacement);
+  const problemId = mapped ? `${input.place.slug}:${input.mapPlacement!.areaId}:${input.colorGrade}:${input.mapSlot}` : null;
   const result = await db.executeQuery(
-    `MATCH (u:User {id: $userId}) MERGE (place:Place {id: $placeId}) SET place.slug = $placeSlug, place.name = $location, place.street = $street, place.postalCode = $postalCode, place.city = $city, place.image = $placeImage CREATE (u)-[:WORKS_ON]->(p:Project { id: $id, name: $name, location: $location, placeSlug: $placeSlug, grade: $grade, colorGrade: $colorGrade, note: $note, image: $image, visible: $visible, attempts: 0, lastAttempt: 'Ikke forsøgt endnu', status: $status, progress: $progress, createdAt: datetime() })-[:AT_PLACE]->(place) RETURN p`,
+    `MATCH (u:User {id: $userId})
+     MERGE (place:Place {id: $placeId})
+     SET place.slug = $placeSlug, place.name = $location, place.street = $street, place.postalCode = $postalCode, place.city = $city, place.image = $placeImage
+     ${mapped ? `MERGE (b:MapProblem {id: $problemId})
+       ON CREATE SET b.placeSlug = $placeSlug, b.areaId = $mapArea, b.colorGrade = $colorGrade, b.slot = $mapSlot, b.mapX = $mapX, b.mapY = $mapY, b.createdAt = datetime()
+       WITH u, place, b WHERE b.removedAt IS NULL` : ''}
+     CREATE (u)-[:WORKS_ON]->(p:Project {id: $id, name: $name, location: $location, placeSlug: $placeSlug, grade: $grade, colorGrade: $colorGrade, note: $note, image: $image, visible: $visible, attempts: 0, lastAttempt: 'Ikke forsøgt endnu', status: $status, progress: $progress,
+       mapArea: $mapArea, mapX: ${mapped ? 'b.mapX' : '$mapX'}, mapY: ${mapped ? 'b.mapY' : '$mapY'}, mapProblemId: $problemId, mapSlot: $mapSlot, createdAt: datetime()})-[:AT_PLACE]->(place)
+     ${mapped ? 'CREATE (p)-[:ON_PROBLEM]->(b)' : ''}
+     RETURN p`,
     {
       userId,
       id: input.id || randomBytes(12).toString("hex"),
@@ -179,6 +204,11 @@ export async function createUserProject(
       visible: input.visible === true,
       progress: input.progress ?? 0,
       status: input.status || "Ny",
+      problemId,
+      mapSlot: input.mapSlot ?? null,
+      mapArea: input.mapPlacement?.areaId ?? null,
+      mapX: input.mapPlacement?.x ?? null,
+      mapY: input.mapPlacement?.y ?? null,
     },
     { database, routing: "WRITE" },
   );
@@ -213,6 +243,7 @@ export async function updateUserProject(
 ) {
   const result = await db.executeQuery(
     `MATCH (:User {id: $userId})-[:WORKS_ON]->(p:Project {id: $projectId})
+    WHERE p.mapProblemId IS NULL OR $colorGrade IS NULL OR p.colorGrade = $colorGrade
     SET p.progress = $progress, p.status = $status, p.note = $note, p.grade = $grade,
         p.colorGrade = CASE WHEN $colorGrade IS NULL THEN p.colorGrade ELSE $colorGrade END,
         p.image = CASE WHEN $image IS NULL THEN p.image ELSE $image END,
@@ -480,7 +511,39 @@ export async function getSharedSession(
   );
   const record = result.records[0];
   if (!record) return null;
-  return publicSession(record, viewerId);
+  const session = publicSession(record, viewerId);
+  if (session.viewerRole) {
+    const projects = await db.executeQuery(`MATCH (:ClimbingSession {shareId: $shareId})-[:SESSION_PROJECT]->(p:Project)<-[:WORKS_ON]-(owner:User)
+      RETURN p, owner ORDER BY p.name`, { shareId }, { database });
+    session.projects = projects.records.map(row => {
+      const p = row.get("p").properties as ProjectNode;
+      const owner = row.get("owner").properties as { id: string; name: string };
+      return { id: p.id, name: p.name, grade: p.grade, colorGrade: p.colorGrade, ownerId: owner.id, ownerName: owner.name };
+    });
+  }
+  return session;
+}
+
+export async function addSessionProject(userId: string, shareId: string, projectId: string) {
+  const result = await db.executeQuery(`MATCH (u:User {id: $userId}), (s:ClimbingSession {shareId: $shareId})
+    WHERE (u)-[:HOSTS]->(s) OR (u)-[:INVITED_TO]->(s)
+    MATCH (u)-[:WORKS_ON]->(p:Project {id: $projectId})
+    WHERE toLower(trim(p.location)) = toLower(trim(s.location)) AND p.status <> 'Gennemført'
+    MERGE (s)-[:SESSION_PROJECT]->(p) RETURN s`, { userId, shareId, projectId }, { database, routing: "WRITE" });
+  return result.records.length ? getSharedSession(shareId, userId) : null;
+}
+
+export async function updateClimbingSession(userId: string, shareId: string, input: { title: string; date: string; time: string; location: string }) {
+  const result = await db.executeQuery(`MATCH (:User {id: $userId})-[:HOSTS]->(s:ClimbingSession {shareId: $shareId})
+    SET s.title = $title, s.date = $date, s.time = $time, s.location = $location, s.updatedAt = datetime()
+    WITH s
+    OPTIONAL MATCH (s)-[link:FOR_PROJECT|SESSION_PROJECT]->(p:Project)
+    WHERE toLower(trim(coalesce(p.location, ''))) <> toLower(trim($location))
+    WITH s, collect(link) AS invalidLinks
+    FOREACH (link IN invalidLinks | DELETE link)
+    RETURN s`,
+    { userId, shareId, ...input }, { database, routing: "WRITE" });
+  return result.records.length ? getSharedSession(shareId, userId) : null;
 }
 export async function getUserSessions(
   userId: string,
