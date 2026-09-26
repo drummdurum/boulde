@@ -8,7 +8,7 @@ type LocationNode = ClimbingLocation & { createdAt?: DateValue; updatedAt?: Date
 type ProjectNode = Omit<ClimbingProject, "owner"> & { mapArea?: string; mapX?: number; mapY?: number };
 
 function locationFromNode(node: LocationNode): ClimbingLocation {
-  return { id: node.id, name: node.name, region: node.region, address: node.address, hours: node.hours, hoursNote: node.hoursNote, status: node.status, type: node.type, chain: node.chain, country: node.country, imageUrl: node.imageUrl, mapsUrl: node.mapsUrl, instagramUrl: node.instagramUrl, facebookUrl: node.facebookUrl, email: node.email, phone: node.phone };
+  return { id: node.id, name: node.name, placeSlug: node.placeSlug, region: node.region, address: node.address, hours: node.hours, hoursNote: node.hoursNote, status: node.status, type: node.type, chain: node.chain, country: node.country, imageUrl: node.imageUrl, mapsUrl: node.mapsUrl, instagramUrl: node.instagramUrl, facebookUrl: node.facebookUrl, email: node.email, phone: node.phone };
 }
 
 export async function getClimbingLocations() {

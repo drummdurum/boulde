@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1072 740" role="img" aria-labelledby="title desc">
+  <title id="title">Vægkort over Boulders Amager</title><desc id="desc">Fjorten navngivne klatresektioner baseret på hallens vægkort.</desc>
+  <rect width="1072" height="740" rx="20" fill="#fafbf8"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M810 520 L865 500 L940 500 L940 680 L875 680 M760 535 L760 718 M385 670 L385 735 L545 735 L545 670 L525 655 L405 655 Z" stroke="#b9c0b8" stroke-width="2"/>
+    <path d="M55 375 L210 375 M390 375 L650 375 M800 375 L940 375" stroke="#8b9c90" stroke-width="8"/>
+    <g stroke="#cfddd7" stroke-width="24">
+      <path d="M150 30 L150 85 L365 85 L365 30"/><path d="M440 30 L505 55 L600 78 L700 120 L815 132 L900 125"/>
+      <path d="M55 105 L55 165"/><path d="M52 175 L115 195 L135 275 L135 330 L92 355"/>
+      <path d="M400 190 L455 165 L525 168 L515 285 L468 282 L435 255"/><path d="M525 168 L575 170 L585 285 L515 285"/>
+      <path d="M900 125 L830 135 L865 150 L835 195 L885 215 L820 260"/><path d="M820 260 L842 305 L845 350 L935 350"/>
+      <path d="M60 395 L115 415 L105 465 L135 545"/><path d="M430 430 L670 430 L720 440 L435 475"/><path d="M435 475 L575 490 L750 465 L720 440"/>
+      <path d="M135 545 L130 590 L165 610 L150 650"/><path d="M150 650 L210 675 L165 705 L65 715"/><path d="M700 540 L655 565 L625 640 L655 705"/>
+    </g>
+    <g stroke="#536f64" stroke-width="3">
+      <path d="M150 30 L150 85 L365 85 L365 30"/><path d="M440 30 L505 55 L600 78 L700 120 L815 132 L900 125"/>
+      <path d="M55 105 L55 165"/><path d="M52 175 L115 195 L135 275 L135 330 L92 355"/>
+      <path d="M400 190 L455 165 L525 168 L515 285 L468 282 L435 255"/><path d="M525 168 L575 170 L585 285 L515 285"/>
+      <path d="M900 125 L830 135 L865 150 L835 195 L885 215 L820 260"/><path d="M820 260 L842 305 L845 350 L935 350"/>
+      <path d="M60 395 L115 415 L105 465 L135 545"/><path d="M430 430 L670 430 L720 440 L435 475"/><path d="M435 475 L575 490 L750 465 L720 440"/>
+      <path d="M135 545 L130 590 L165 610 L150 650"/><path d="M150 650 L210 675 L165 705 L65 715"/><path d="M700 540 L655 565 L625 640 L655 705"/>
+    </g>
+  </g>
+  <g fill="#283a39" font-family="system-ui,sans-serif" font-size="15" font-weight="700" text-anchor="middle">
+    <text x="258" y="62">Kilter</text><text x="660" y="58">Tag + Slab</text><text x="110" y="137">Campus</text><text x="205" y="275">Lynet</text>
+    <text x="365" y="225">Ø'en</text><text x="635" y="235">Ø'to</text><text x="950" y="195">Comp 1</text><text x="940" y="300">Comp 2</text>
+    <text x="205" y="470">Toppen</text><text x="495" y="415">Enden</text><text x="720" y="495">Klippen</text><text x="220" y="585">Dybet</text><text x="250" y="690">Kids</text><text x="760" y="650">Slab</text>
+  </g>
+</svg>

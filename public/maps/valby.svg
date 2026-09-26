@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1072 740" role="img" aria-labelledby="title desc">
+  <title id="title">Vægkort over Boulders Valby</title>
+  <desc id="desc">Syv klatresektioner baseret på Valby-skitsen.</desc>
+  <rect width="1072" height="740" rx="20" fill="#fafbf8"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M36 602 L36 24 L852 24 L852 602 M307 245 L529 245 L529 296 L307 296 Z" stroke="#b9c0b8" stroke-width="2"/>
+    <path d="M64 282 L129 261 M36 491 L103 474 M724 202 L765 160 M655 355 L660 415 M588 517 L630 474" stroke="#8b9c90" stroke-width="2.5" stroke-dasharray="4 4"/>
+    <g stroke="#cfddd7" stroke-width="24">
+      <path d="M86 49 L60 78 L46 125 L36 159 L95 220 L87 260 L87 275"/>
+      <path d="M87 275 L86 320 L96 367 L112 415 L76 481"/>
+      <path d="M76 481 L70 490 L78 577 L154 611 L172 670 L112 729 L36 738"/>
+      <path d="M750 41 L738 184"/>
+      <path d="M738 184 L733 219 L758 252 L775 364 L749 398 L660 383"/>
+      <path d="M660 383 L580 389 L546 406 L537 466 L608 494"/>
+      <path d="M608 494 L708 500 L742 541 L742 618 L639 653 L639 696 L672 738"/>
+    </g>
+    <g stroke="#536f64" stroke-width="3">
+      <path d="M86 49 L60 78 L46 125 L36 159 L95 220 L87 260 L87 275"/>
+      <path d="M87 275 L86 320 L96 367 L112 415 L76 481"/>
+      <path d="M76 481 L70 490 L78 577 L154 611 L172 670 L112 729 L36 738"/>
+      <path d="M750 41 L738 184"/><path d="M738 184 L733 219 L758 252 L775 364 L749 398 L660 383"/>
+      <path d="M660 383 L580 389 L546 406 L537 466 L608 494"/>
+      <path d="M608 494 L708 500 L742 541 L742 618 L639 653 L639 696 L672 738"/>
+    </g>
+  </g>
+  <g fill="#283a39" font-family="system-ui, sans-serif" font-size="15" font-weight="700" text-anchor="middle">
+    <text x="160" y="160">Øverst</text><text x="172" y="365">Midten</text><text x="225" y="650">Nederst</text>
+    <text x="840" y="115">Øverst</text><text x="860" y="300">Midten</text><text x="500" y="355">Midtervæg</text><text x="820" y="590">Overhæng</text>
+  </g>
+</svg>

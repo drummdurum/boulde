@@ -22,3 +22,29 @@ describe("Sydhavns sektioner", () => {
     expect(map.areas.filter(area => area.id.startsWith("center-wall")).every(area => !area.path.includes("L779 642"))).toBe(true);
   });
 });
+
+describe("Valbys sektioner", () => {
+  const map = gymMapForPlace("boulders-valby")!;
+  it("har syv klikbare vægge og holder konteksten uden for projektområderne", () => {
+    expect(map.areas).toHaveLength(7);
+    expect(map.areas.map(area => area.id)).toEqual([
+      "valby-left-upper", "valby-left-middle", "valby-left-lower",
+      "valby-right-upper", "valby-right-middle", "valby-center", "valby-overhang",
+    ]);
+    expect(validMapPlacement("boulders-valby", { areaId: "valby-overhang", x: 70, y: 78 })).toBe(true);
+    expect(validMapPlacement("boulders-valby", { areaId: "center-obstacle", x: 40, y: 35 })).toBe(false);
+  });
+});
+
+describe("Amagers sektioner", () => {
+  const map = gymMapForPlace("boulders-amager")!;
+  it("bruger de 14 navngivne vægge fra hallens kort", () => {
+    expect(map.areas).toHaveLength(14);
+    expect(map.areas.map(area => area.name)).toEqual([
+      "Kilter", "Tag + Slab", "Campus", "Lynet", "Ø'en", "Ø'to", "Comp 1", "Comp 2",
+      "Toppen", "Enden", "Klippen", "Dybet", "Kids", "Slab",
+    ]);
+    expect(validMapPlacement("boulders-amager", { areaId: "amager-comp-two", x: 79, y: 42 })).toBe(true);
+    expect(validMapPlacement("boulders-amager", { areaId: "changing-rooms", x: 85, y: 80 })).toBe(false);
+  });
+});
